@@ -8,15 +8,16 @@ final class RecordingIndicator {
     func show() {
         guard window == nil else { return }
 
-        let size: CGFloat = 20
+        let width: CGFloat = 48
+        let height: CGFloat = 28
         let mouseLocation = NSEvent.mouseLocation
 
         let panel = NSPanel(
             contentRect: NSRect(
                 x: mouseLocation.x + 16,
-                y: mouseLocation.y - size - 8,
-                width: size,
-                height: size
+                y: mouseLocation.y - height - 8,
+                width: width,
+                height: height
             ),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
@@ -29,7 +30,7 @@ final class RecordingIndicator {
         panel.ignoresMouseEvents = true
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
-        let hostingView = NSHostingView(rootView: RecordingDot())
+        let hostingView = NSHostingView(rootView: RecordingWave())
         panel.contentView = hostingView
         panel.orderFrontRegardless()
 
@@ -38,6 +39,7 @@ final class RecordingIndicator {
 
     func showProcessing() {
         guard let panel = window else { return }
+        panel.setContentSize(NSSize(width: 28, height: 28))
         let hostingView = NSHostingView(rootView: ProcessingDot())
         panel.contentView = hostingView
     }
@@ -46,21 +48,95 @@ final class RecordingIndicator {
         window?.orderOut(nil)
         window = nil
     }
+
+    /// Query the focused app's text caret position via Accessibility API.
+    /// Returns the caret origin in AppKit screen coordinates (bottom-left origin), or nil.
+    private static func caretScreenPosition() -> NSPoint? {
+        guard let frontApp = NSWorkspace.shared.frontmostApplication else { return nil }
+
+        let appElement = AXUIElementCreateApplication(frontApp.processIdentifier)
+
+        var focusedValue: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(appElement, kAXFocusedUIElementAttribute as CFString, &focusedValue) == .success,
+              let focused = focusedValue else { return nil }
+
+        let focusedElement = focused as! AXUIElement
+
+        // Get the selected text range (cursor position)
+        var rangeValue: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(focusedElement, kAXSelectedTextRangeAttribute as CFString, &rangeValue) == .success,
+              let range = rangeValue else { return nil }
+
+        // Get the screen bounds for that range
+        var boundsValue: CFTypeRef?
+        guard AXUIElementCopyParameterizedAttributeValue(focusedElement, kAXBoundsForRangeParameterizedAttribute as CFString, range, &boundsValue) == .success,
+              let bounds = boundsValue else { return nil }
+
+        // Extract CGRect from the AXValue
+        var rect = CGRect.zero
+        guard AXValueGetValue(bounds as! AXValue, .cgRect, &rect) else { return nil }
+
+        // AX coordinates: origin at top-left of primary display
+        // AppKit coordinates: origin at bottom-left of primary display
+        guard let mainScreen = NSScreen.main else { return nil }
+        let flippedY = mainScreen.frame.height - rect.origin.y - rect.size.height
+
+        return NSPoint(x: rect.origin.x, y: flippedY)
+    }
 }
 
-private struct RecordingDot: View {
-    @State private var opacity: Double = 1.0
+private struct RecordingWave: View {
+    private let barCount = 5
+    private let barWidth: CGFloat = 3
+    private let spacing: CGFloat = 3
+    private let minHeight: CGFloat = 4
+    private let maxHeight: CGFloat = 20
 
     var body: some View {
-        Circle()
-            .fill(.red)
-            .frame(width: 16, height: 16)
-            .opacity(opacity)
-            .onAppear {
-                withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
-                    opacity = 0.4
-                }
+        HStack(spacing: spacing) {
+            ForEach(0..<barCount, id: \.self) { index in
+                WaveBar(
+                    minHeight: minHeight,
+                    maxHeight: maxHeight,
+                    barWidth: barWidth,
+                    delay: Double(index) * 0.12
+                )
             }
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.black.opacity(0.7))
+        )
+    }
+}
+
+private struct WaveBar: View {
+    let minHeight: CGFloat
+    let maxHeight: CGFloat
+    let barWidth: CGFloat
+    let delay: Double
+
+    @State private var animating = false
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: barWidth / 2)
+            .fill(
+                LinearGradient(
+                    colors: [.red, .orange],
+                    startPoint: .bottom,
+                    endPoint: .top
+                )
+            )
+            .frame(width: barWidth, height: animating ? maxHeight : minHeight)
+            .animation(
+                .easeInOut(duration: 0.45)
+                    .repeatForever(autoreverses: true)
+                    .delay(delay),
+                value: animating
+            )
+            .onAppear { animating = true }
     }
 }
 
@@ -73,6 +149,11 @@ private struct ProcessingDot: View {
             .stroke(.orange, lineWidth: 2)
             .frame(width: 14, height: 14)
             .rotationEffect(.degrees(rotation))
+            .padding(7)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(.black.opacity(0.7))
+            )
             .onAppear {
                 withAnimation(.linear(duration: 0.8).repeatForever(autoreverses: false)) {
                     rotation = 360
