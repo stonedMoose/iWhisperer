@@ -5,17 +5,24 @@ import SwiftUI
 final class RecordingIndicator {
     private var window: NSWindow?
 
-    func show() {
-        guard window == nil else { return }
+    /// Show the recording indicator near the text cursor.
+    /// Returns `false` (and beeps) if no text cursor is found.
+    @discardableResult
+    func show() -> Bool {
+        guard window == nil else { return true }
+
+        guard let caretPoint = Self.caretScreenPosition() else {
+            NSSound.beep()
+            return false
+        }
 
         let width: CGFloat = 48
         let height: CGFloat = 28
-        let mouseLocation = NSEvent.mouseLocation
 
         let panel = NSPanel(
             contentRect: NSRect(
-                x: mouseLocation.x + 16,
-                y: mouseLocation.y - height - 8,
+                x: caretPoint.x + 4,
+                y: caretPoint.y - height - 4,
                 width: width,
                 height: height
             ),
@@ -35,6 +42,7 @@ final class RecordingIndicator {
         panel.orderFrontRegardless()
 
         window = panel
+        return true
     }
 
     func showProcessing() {
