@@ -229,8 +229,11 @@ final class AppState {
     private func startBatchRecording() {
         do {
             try audioCapture.startRecording()
+            guard recordingIndicator.show() else {
+                _ = audioCapture.stopRecording()
+                return
+            }
             isRecording = true
-            recordingIndicator.show()
             Log.audio.info("Recording started (batch mode)")
         } catch {
             Log.audio.error("Failed to start recording: \(error)")
@@ -292,8 +295,11 @@ final class AppState {
 
         do {
             try audioCapture.startRecording()
+            guard recordingIndicator.show() else {
+                _ = audioCapture.stopRecording()
+                return
+            }
             isRecording = true
-            recordingIndicator.show()
             Log.audio.info("Recording started (streaming mode)")
 
             streamingLoopTask = Task {
