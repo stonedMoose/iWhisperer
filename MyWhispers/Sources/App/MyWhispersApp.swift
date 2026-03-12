@@ -24,6 +24,9 @@ struct MyWhispersApp: App {
                 Button("Open Accessibility Settings...") {
                     appState.openAccessibilitySettings()
                 }
+                Button("Restart App (required after granting)") {
+                    appState.relaunch()
+                }
             } else if appState.isProcessing {
                 Text("Transcribing...")
             } else if appState.isRecording {

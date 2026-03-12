@@ -96,6 +96,15 @@ final class AppState {
         accessibilityPermissionGranted = TextInjector.hasAccessibilityPermission
     }
 
+    func relaunch() {
+        let executablePath = Bundle.main.executablePath ?? ProcessInfo.processInfo.arguments[0]
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: executablePath)
+        process.arguments = []
+        try? process.run()
+        NSApplication.shared.terminate(nil)
+    }
+
     private func showPermissionError(_ message: String) {
         permissionAlertMessage = message
         showPermissionAlert = true
