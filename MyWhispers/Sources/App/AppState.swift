@@ -1,4 +1,5 @@
 import AVFoundation
+import OSLog
 import SwiftUI
 import KeyboardShortcuts
 
@@ -35,6 +36,7 @@ final class AppState {
         switch micStatus {
         case .notDetermined:
             micPermissionGranted = await AudioCapture.requestPermission()
+            Log.permissions.info("Microphone permission: \(self.micPermissionGranted ? "granted" : "denied")")
             if !micPermissionGranted {
                 showPermissionError("Microphone access is required for speech-to-text. Please grant access in System Settings > Privacy & Security > Microphone.")
             }
@@ -49,6 +51,7 @@ final class AppState {
 
         // Check accessibility permission
         accessibilityPermissionGranted = TextInjector.hasAccessibilityPermission
+        Log.permissions.info("Accessibility permission: \(self.accessibilityPermissionGranted ? "granted" : "not granted")")
         if !accessibilityPermissionGranted {
             TextInjector.requestAccessibilityPermission()
         }
@@ -133,10 +136,12 @@ final class AppState {
     func loadModel() async {
         isModelLoaded = false
         do {
+            Log.whisper.info("Loading model: \(self.settingsStore.selectedModel.rawValue)")
             try await whisperEngine.loadModel(settingsStore.selectedModel)
             isModelLoaded = true
+            Log.whisper.info("Model loaded successfully")
         } catch {
-            print("Failed to load model: \(error)")
+            Log.whisper.error("Failed to load model: \(error)")
         }
     }
 
@@ -160,8 +165,9 @@ final class AppState {
             try audioCapture.startRecording()
             isRecording = true
             recordingIndicator.show()
+            Log.audio.info("Recording started")
         } catch {
-            print("Failed to start recording: \(error)")
+            Log.audio.error("Failed to start recording: \(error)")
         }
     }
 
@@ -170,6 +176,7 @@ final class AppState {
 
         let samples = audioCapture.stopRecording()
         isRecording = false
+        Log.audio.info("Recording stopped, \(samples.count) samples captured")
 
         guard !samples.isEmpty else {
             recordingIndicator.hide()
@@ -184,11 +191,12 @@ final class AppState {
                 audioSamples: samples,
                 language: settingsStore.selectedLanguage
             )
+            Log.whisper.info("Transcription result: \(text)")
             if !text.isEmpty {
                 TextInjector.typeText(text)
             }
         } catch {
-            print("Transcription failed: \(error)")
+            Log.whisper.error("Transcription failed: \(error)")
         }
 
         isProcessing = false

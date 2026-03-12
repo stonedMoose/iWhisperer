@@ -1,3 +1,4 @@
+import OSLog
 import ServiceManagement
 import SwiftUI
 import KeyboardShortcuts
@@ -45,7 +46,7 @@ struct SettingsView: View {
                             }
                         } catch {
                             settings.launchAtLogin = !newValue
-                            print("Failed to update login item: \(error)")
+                            Log.general.error("Failed to update login item: \(error)")
                         }
                     }
             }
