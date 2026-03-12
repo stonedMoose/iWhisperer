@@ -285,6 +285,7 @@ final class AppState {
                         self?.handleStreamingStateChange(oldState: oldState, newState: newState)
                     }
                 }
+                Log.whisper.info("Streaming transcription task completed normally")
             } catch {
                 Log.whisper.error("Streaming transcription failed: \(error)")
                 self.isRecording = false
@@ -304,6 +305,7 @@ final class AppState {
 
     private func handleStreamingStateChange(oldState: AudioStreamTranscriber.State, newState: AudioStreamTranscriber.State) {
         lastStreamingState = newState
+        Log.whisper.debug("Streaming state: confirmed=\(newState.confirmedSegments.count) unconfirmed=\(newState.unconfirmedSegments.count) text=\(newState.currentText)")
 
         // Inject newly confirmed segments
         let newConfirmedCount = newState.confirmedSegments.count
