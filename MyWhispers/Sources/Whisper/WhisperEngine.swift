@@ -14,9 +14,21 @@ actor WhisperEngine {
         whisperKit = nil
         currentModel = nil
 
-        let config = WhisperKitConfig(model: model.rawValue)
+        let modelFolder = Self.modelsDirectory
+        try FileManager.default.createDirectory(atPath: modelFolder, withIntermediateDirectories: true)
+
+        let config = WhisperKitConfig(
+            model: model.rawValue,
+            modelFolder: modelFolder
+        )
         whisperKit = try await WhisperKit(config)
         currentModel = model
+    }
+
+    /// ~/Library/Application Support/MyWhispers/models
+    private static var modelsDirectory: String {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        return appSupport.appendingPathComponent("MyWhispers/models").path
     }
 
     /// Transcribe audio samples (16kHz Float array) to text.
