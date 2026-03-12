@@ -13,7 +13,18 @@ struct MyWhispersApp: App {
 
     var body: some Scene {
         MenuBarExtra("MyWhispers", systemImage: appState.isRecording ? "mic.fill" : "mic") {
-            if appState.isProcessing {
+            // Status
+            if !appState.micPermissionGranted {
+                Label("Microphone not authorized", systemImage: "exclamationmark.triangle")
+                Button("Open Microphone Settings...") {
+                    appState.openMicrophoneSettings()
+                }
+            } else if !appState.accessibilityPermissionGranted {
+                Label("Accessibility not authorized", systemImage: "exclamationmark.triangle")
+                Button("Open Accessibility Settings...") {
+                    appState.openAccessibilitySettings()
+                }
+            } else if appState.isProcessing {
                 Text("Transcribing...")
             } else if appState.isRecording {
                 Text("Recording...")
@@ -24,6 +35,13 @@ struct MyWhispersApp: App {
             }
 
             Divider()
+
+            if !appState.micPermissionGranted || !appState.accessibilityPermissionGranted {
+                Button("Recheck Permissions") {
+                    appState.recheckPermissions()
+                }
+                Divider()
+            }
 
             SettingsLink {
                 Text("Settings...")

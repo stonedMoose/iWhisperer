@@ -8,6 +8,10 @@ final class AppState {
     var isRecording = false
     var isProcessing = false
     var isModelLoaded = false
+    var micPermissionGranted = false
+    var accessibilityPermissionGranted = false
+    var showPermissionAlert = false
+    var permissionAlertMessage = ""
 
     private let whisperEngine = WhisperEngine()
     private let audioCapture = AudioCapture()
@@ -20,12 +24,58 @@ final class AppState {
         setupHotkey()
         setupModelChangeListener()
         Task {
-            let granted = await AudioCapture.requestPermission()
-            if !granted {
-                print("Microphone permission denied")
-            }
-            await loadModel()
+            await checkPermissionsAndSetup()
         }
+    }
+
+    private func checkPermissionsAndSetup() async {
+        // Check microphone permission
+        let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+        switch micStatus {
+        case .notDetermined:
+            micPermissionGranted = await AudioCapture.requestPermission()
+            if !micPermissionGranted {
+                showPermissionError("Microphone access is required for speech-to-text. Please grant access in System Settings > Privacy & Security > Microphone.")
+            }
+        case .authorized:
+            micPermissionGranted = true
+        case .denied, .restricted:
+            micPermissionGranted = false
+            showPermissionError("Microphone access is required for speech-to-text. Please grant access in System Settings > Privacy & Security > Microphone.")
+        @unknown default:
+            micPermissionGranted = false
+        }
+
+        // Check accessibility permission
+        accessibilityPermissionGranted = TextInjector.hasAccessibilityPermission
+        if !accessibilityPermissionGranted {
+            TextInjector.requestAccessibilityPermission()
+        }
+
+        // Load model regardless (so it's ready when permissions are granted)
+        await loadModel()
+    }
+
+    func openMicrophoneSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    func openAccessibilitySettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    func recheckPermissions() {
+        micPermissionGranted = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+        accessibilityPermissionGranted = TextInjector.hasAccessibilityPermission
+    }
+
+    private func showPermissionError(_ message: String) {
+        permissionAlertMessage = message
+        showPermissionAlert = true
     }
 
     private func setupModelChangeListener() {
@@ -72,12 +122,15 @@ final class AppState {
     private func startRecording() {
         guard isModelLoaded, !isProcessing else { return }
 
-        guard AVCaptureDevice.authorizationStatus(for: .audio) == .authorized else {
-            Task { _ = await AudioCapture.requestPermission() }
+        // Recheck permissions each time
+        recheckPermissions()
+
+        guard micPermissionGranted else {
+            showPermissionError("Microphone access is required. Please grant access in System Settings > Privacy & Security > Microphone.")
             return
         }
 
-        guard TextInjector.hasAccessibilityPermission else {
+        guard accessibilityPermissionGranted else {
             TextInjector.requestAccessibilityPermission()
             return
         }
