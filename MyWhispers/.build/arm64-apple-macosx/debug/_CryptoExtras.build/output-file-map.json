@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/_CryptoExtras.build/master.swiftdeps"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/swift-crypto/Sources/_CryptoExtras/Exports.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/_CryptoExtras.build/Exports.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/_CryptoExtras.build/Exports.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/_CryptoExtras.build/Exports~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/_CryptoExtras.build/Exports.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/_CryptoExtras.build/Exports.dia"
+  }
+}

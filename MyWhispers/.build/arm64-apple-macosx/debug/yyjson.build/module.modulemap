@@ -1,0 +1,4 @@
+module yyjson {
+    umbrella header "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/yyjson/src/yyjson.h"
+    export *
+}

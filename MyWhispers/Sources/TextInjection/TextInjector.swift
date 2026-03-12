@@ -33,6 +33,9 @@ struct TextInjector {
 
             keyDown?.post(tap: .cghidEventTap)
             keyUp?.post(tap: .cghidEventTap)
+
+            // Small delay to prevent overwhelming target app's event queue
+            usleep(1000)
         }
     }
 }

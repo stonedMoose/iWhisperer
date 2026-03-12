@@ -1,0 +1,89 @@
+{
+  "": {
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/master.swiftdeps"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/swift-transformers/Sources/Tokenizers/BPETokenizer.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/BPETokenizer.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/BPETokenizer.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/BPETokenizer~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/BPETokenizer.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/BPETokenizer.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/swift-transformers/Sources/Tokenizers/BertTokenizer.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/BertTokenizer.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/BertTokenizer.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/BertTokenizer~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/BertTokenizer.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/BertTokenizer.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/swift-transformers/Sources/Tokenizers/ByteEncoder.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/ByteEncoder.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/ByteEncoder.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/ByteEncoder~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/ByteEncoder.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/ByteEncoder.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/swift-transformers/Sources/Tokenizers/Decoder.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Decoder.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Decoder.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Decoder~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Decoder.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Decoder.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/swift-transformers/Sources/Tokenizers/Normalizer.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Normalizer.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Normalizer.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Normalizer~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Normalizer.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Normalizer.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/swift-transformers/Sources/Tokenizers/PostProcessor.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/PostProcessor.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/PostProcessor.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/PostProcessor~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/PostProcessor.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/PostProcessor.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/swift-transformers/Sources/Tokenizers/PreTokenizer.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/PreTokenizer.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/PreTokenizer.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/PreTokenizer~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/PreTokenizer.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/PreTokenizer.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/swift-transformers/Sources/Tokenizers/String+PreTokenization.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/String+PreTokenization.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/String+PreTokenization.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/String+PreTokenization~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/String+PreTokenization.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/String+PreTokenization.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/swift-transformers/Sources/Tokenizers/TokenLattice.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/TokenLattice.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/TokenLattice.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/TokenLattice~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/TokenLattice.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/TokenLattice.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/swift-transformers/Sources/Tokenizers/Tokenizer.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Tokenizer.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Tokenizer.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Tokenizer~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Tokenizer.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Tokenizer.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/swift-transformers/Sources/Tokenizers/Trie.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Trie.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Trie.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Trie~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Trie.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/Trie.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/swift-transformers/Sources/Tokenizers/UnigramTokenizer.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/UnigramTokenizer.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/UnigramTokenizer.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/UnigramTokenizer~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/UnigramTokenizer.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Tokenizers.build/UnigramTokenizer.dia"
+  }
+}

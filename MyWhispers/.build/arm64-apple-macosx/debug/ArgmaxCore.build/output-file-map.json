@@ -1,0 +1,82 @@
+{
+  "": {
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/master.swiftdeps"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/WhisperKit/Sources/ArgmaxCore/ConcurrencyUtilities.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/ConcurrencyUtilities.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/ConcurrencyUtilities.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/ConcurrencyUtilities~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/ConcurrencyUtilities.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/ConcurrencyUtilities.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/WhisperKit/Sources/ArgmaxCore/FileUtilities.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/FileUtilities.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/FileUtilities.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/FileUtilities~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/FileUtilities.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/FileUtilities.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/WhisperKit/Sources/ArgmaxCore/FloatType.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/FloatType.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/FloatType.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/FloatType~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/FloatType.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/FloatType.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/WhisperKit/Sources/ArgmaxCore/FoundationExtensions.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/FoundationExtensions.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/FoundationExtensions.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/FoundationExtensions~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/FoundationExtensions.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/FoundationExtensions.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/WhisperKit/Sources/ArgmaxCore/Logging.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/Logging.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/Logging.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/Logging~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/Logging.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/Logging.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/WhisperKit/Sources/ArgmaxCore/MLModelExtensions.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLModelExtensions.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLModelExtensions.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLModelExtensions~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLModelExtensions.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLModelExtensions.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/WhisperKit/Sources/ArgmaxCore/MLModelLoading.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLModelLoading.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLModelLoading.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLModelLoading~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLModelLoading.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLModelLoading.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/WhisperKit/Sources/ArgmaxCore/MLMultiArrayExtensions.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLMultiArrayExtensions.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLMultiArrayExtensions.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLMultiArrayExtensions~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLMultiArrayExtensions.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLMultiArrayExtensions.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/WhisperKit/Sources/ArgmaxCore/MLTensorExtensions.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLTensorExtensions.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLTensorExtensions.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLTensorExtensions~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLTensorExtensions.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/MLTensorExtensions.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/WhisperKit/Sources/ArgmaxCore/ModelState.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/ModelState.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/ModelState.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/ModelState~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/ModelState.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/ModelState.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/WhisperKit/Sources/ArgmaxCore/ModelUtilities.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/ModelUtilities.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/ModelUtilities.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/ModelUtilities~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/ModelUtilities.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/ArgmaxCore.build/ModelUtilities.dia"
+  }
+}

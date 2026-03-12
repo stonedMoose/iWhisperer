@@ -13,6 +13,7 @@ final class AppState {
     private let audioCapture = AudioCapture()
     private let recordingIndicator = RecordingIndicator()
     private let settingsStore: SettingsStore
+    nonisolated(unsafe) private var modelChangeObserver: NSObjectProtocol?
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
@@ -28,7 +29,7 @@ final class AppState {
     }
 
     private func setupModelChangeListener() {
-        NotificationCenter.default.addObserver(
+        modelChangeObserver = NotificationCenter.default.addObserver(
             forName: .modelChanged,
             object: nil,
             queue: .main
@@ -36,6 +37,12 @@ final class AppState {
             Task { @MainActor in
                 await self?.loadModel()
             }
+        }
+    }
+
+    deinit {
+        if let observer = modelChangeObserver {
+            NotificationCenter.default.removeObserver(observer)
         }
     }
 

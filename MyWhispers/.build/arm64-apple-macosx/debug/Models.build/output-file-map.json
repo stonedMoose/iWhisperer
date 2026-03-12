@@ -1,0 +1,26 @@
+{
+  "": {
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Models.build/master.swiftdeps"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/swift-transformers/Sources/Models/LanguageModel.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Models.build/LanguageModel.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Models.build/LanguageModel.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Models.build/LanguageModel~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Models.build/LanguageModel.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Models.build/LanguageModel.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/swift-transformers/Sources/Models/LanguageModelTypes.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Models.build/LanguageModelTypes.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Models.build/LanguageModelTypes.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Models.build/LanguageModelTypes~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Models.build/LanguageModelTypes.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Models.build/LanguageModelTypes.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/checkouts/swift-transformers/Sources/Models/Weights.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Models.build/Weights.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Models.build/Weights.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Models.build/Weights~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Models.build/Weights.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/Models.build/Weights.dia"
+  }
+}

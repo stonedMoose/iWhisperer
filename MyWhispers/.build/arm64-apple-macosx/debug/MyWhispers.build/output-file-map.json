@@ -1,0 +1,68 @@
+{
+  "": {
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/master.swiftdeps"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/Sources/App/AppState.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/AppState.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/AppState.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/AppState~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/AppState.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/AppState.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/Sources/App/MyWhispersApp.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/MyWhispersApp.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/MyWhispersApp.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/MyWhispersApp~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/MyWhispersApp.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/MyWhispersApp.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/Sources/Audio/AudioCapture.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/AudioCapture.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/AudioCapture.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/AudioCapture~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/AudioCapture.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/AudioCapture.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/Sources/Settings/SettingsStore.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/SettingsStore.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/SettingsStore.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/SettingsStore~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/SettingsStore.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/SettingsStore.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/Sources/Settings/SettingsView.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/SettingsView.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/SettingsView.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/SettingsView~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/SettingsView.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/SettingsView.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/Sources/TextInjection/TextInjector.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/TextInjector.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/TextInjector.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/TextInjector~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/TextInjector.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/TextInjector.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/Sources/UI/RecordingIndicator.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/RecordingIndicator.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/RecordingIndicator.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/RecordingIndicator~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/RecordingIndicator.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/RecordingIndicator.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/Sources/Whisper/WhisperEngine.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/WhisperEngine.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/WhisperEngine.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/WhisperEngine~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/WhisperEngine.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/WhisperEngine.dia"
+  },
+  "/Users/julienlhermite/Projects/my-whispers/MyWhispers/Sources/Whisper/WhisperModels.swift": {
+    "dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/WhisperModels.d",
+    "object": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/WhisperModels.swift.o",
+    "swiftmodule": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/WhisperModels~partial.swiftmodule",
+    "swift-dependencies": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/WhisperModels.swiftdeps",
+    "diagnostics": "/Users/julienlhermite/Projects/my-whispers/MyWhispers/.build/arm64-apple-macosx/debug/MyWhispers.build/WhisperModels.dia"
+  }
+}

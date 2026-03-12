@@ -44,6 +44,7 @@ struct SettingsView: View {
                                 try SMAppService.mainApp.unregister()
                             }
                         } catch {
+                            settings.launchAtLogin = !newValue
                             print("Failed to update login item: \(error)")
                         }
                     }
