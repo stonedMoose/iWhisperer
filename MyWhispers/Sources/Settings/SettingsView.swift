@@ -1,3 +1,4 @@
+import ServiceManagement
 import SwiftUI
 import KeyboardShortcuts
 
@@ -18,6 +19,9 @@ struct SettingsView: View {
                         Text(model.displayName).tag(model)
                     }
                 }
+                .onChange(of: settings.selectedModel) { _, _ in
+                    NotificationCenter.default.post(name: .modelChanged, object: nil)
+                }
 
                 Picker("Language", selection: $settings.selectedLanguage) {
                     ForEach(WhisperLanguage.allCases) { language in
@@ -32,9 +36,24 @@ struct SettingsView: View {
 
             Section("General") {
                 Toggle("Launch at login", isOn: $settings.launchAtLogin)
+                    .onChange(of: settings.launchAtLogin) { _, newValue in
+                        do {
+                            if newValue {
+                                try SMAppService.mainApp.register()
+                            } else {
+                                try SMAppService.mainApp.unregister()
+                            }
+                        } catch {
+                            print("Failed to update login item: \(error)")
+                        }
+                    }
             }
         }
         .formStyle(.grouped)
         .frame(width: 380, height: 280)
     }
+}
+
+extension Notification.Name {
+    static let modelChanged = Notification.Name("modelChanged")
 }

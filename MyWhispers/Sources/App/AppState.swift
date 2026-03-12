@@ -1,3 +1,4 @@
+import AVFoundation
 import SwiftUI
 import KeyboardShortcuts
 
@@ -16,7 +17,26 @@ final class AppState {
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
         setupHotkey()
-        Task { await loadModel() }
+        setupModelChangeListener()
+        Task {
+            let granted = await AudioCapture.requestPermission()
+            if !granted {
+                print("Microphone permission denied")
+            }
+            await loadModel()
+        }
+    }
+
+    private func setupModelChangeListener() {
+        NotificationCenter.default.addObserver(
+            forName: .modelChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                await self?.loadModel()
+            }
+        }
     }
 
     private func setupHotkey() {
@@ -44,6 +64,11 @@ final class AppState {
 
     private func startRecording() {
         guard isModelLoaded, !isProcessing else { return }
+
+        guard AVCaptureDevice.authorizationStatus(for: .audio) == .authorized else {
+            Task { _ = await AudioCapture.requestPermission() }
+            return
+        }
 
         guard TextInjector.hasAccessibilityPermission else {
             TextInjector.requestAccessibilityPermission()
