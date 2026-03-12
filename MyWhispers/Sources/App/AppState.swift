@@ -2,7 +2,7 @@ import AVFoundation
 import OSLog
 import SwiftUI
 import KeyboardShortcuts
-import WhisperKit
+
 
 @Observable
 @MainActor
@@ -185,10 +185,11 @@ final class AppState {
 
     // MARK: - Recording
 
-    private var lastInjectedSegmentCount = 0
-    private var lastStreamingState: AudioStreamTranscriber.State?
-    private var streamingTask: Task<Void, Never>?
-    private var streamingInjectedText = ""
+    private static let streamStepMs = 3000 // How often to transcribe during streaming (ms)
+
+    private var streamingLoopTask: Task<Void, Never>?
+    private var streamingTypedCount = 0
+    private var lastStreamingResult = ""
 
     private func startRecording() {
         guard isModelLoaded, !isProcessing else { return }
@@ -223,7 +224,7 @@ final class AppState {
         }
     }
 
-    // MARK: - Batch mode (original)
+    // MARK: - Batch mode
 
     private func startBatchRecording() {
         do {
@@ -266,36 +267,9 @@ final class AppState {
         recordingIndicator.hide()
     }
 
-    // MARK: - Streaming mode
-
-    private func startStreamingRecording() {
-        lastInjectedSegmentCount = 0
-        lastStreamingState = nil
-        streamingInjectedText = ""
-        isRecording = true
-        recordingIndicator.show()
-        Log.audio.info("Recording started (streaming mode)")
-
-        streamingTask = Task {
-            do {
-                try await whisperEngine.startStreaming(
-                    language: settingsStore.selectedLanguage
-                ) { [weak self] oldState, newState in
-                    Task { @MainActor [weak self] in
-                        self?.handleStreamingStateChange(oldState: oldState, newState: newState)
-                    }
-                }
-                Log.whisper.info("Streaming transcription task completed normally")
-            } catch {
-                Log.whisper.error("Streaming transcription failed: \(error)")
-                self.isRecording = false
-                self.recordingIndicator.hide()
-            }
-        }
-    }
+    // MARK: - Streaming mode (sliding window)
 
     private static func cleanTranscriptionText(_ text: String) -> String {
-        // Strip any special tokens that leaked through (e.g. <|startoftranscript|>, <|en|>, <|0.00|>)
         text.replacingOccurrences(
             of: "<\\|[^|]*\\|>",
             with: "",
@@ -303,70 +277,117 @@ final class AppState {
         ).trimmingCharacters(in: .whitespaces)
     }
 
-    private func handleStreamingStateChange(oldState: AudioStreamTranscriber.State, newState: AudioStreamTranscriber.State) {
-        lastStreamingState = newState
-        Log.whisper.debug("Streaming state: confirmed=\(newState.confirmedSegments.count) unconfirmed=\(newState.unconfirmedSegments.count) text=\(newState.currentText)")
+    /// Number of leading characters that are identical in both strings.
+    private static func commonPrefixCount(_ a: String, _ b: String) -> Int {
+        var count = 0
+        for (ca, cb) in zip(a, b) {
+            if ca == cb { count += 1 } else { break }
+        }
+        return count
+    }
 
-        // Inject newly confirmed segments
-        let newConfirmedCount = newState.confirmedSegments.count
-        if newConfirmedCount > lastInjectedSegmentCount {
-            let newSegments = newState.confirmedSegments[lastInjectedSegmentCount...]
-            let raw = newSegments.map(\.text).joined(separator: " ")
-            let text = Self.cleanTranscriptionText(raw)
-            if !text.isEmpty {
-                Log.whisper.info("Streaming confirmed text: \(text)")
-                TextInjector.typeText(text)
-                streamingInjectedText += text
+    private func startStreamingRecording() {
+        streamingTypedCount = 0
+        lastStreamingResult = ""
+
+        do {
+            try audioCapture.startRecording()
+            isRecording = true
+            recordingIndicator.show()
+            Log.audio.info("Recording started (streaming mode)")
+
+            streamingLoopTask = Task {
+                await streamingLoop()
             }
-            lastInjectedSegmentCount = newConfirmedCount
+        } catch {
+            Log.audio.error("Failed to start streaming recording: \(error)")
+        }
+    }
+
+    private func streamingLoop() async {
+        let minSamples = Self.streamStepMs * 16 // 16kHz = 16 samples per ms
+
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .milliseconds(Self.streamStepMs))
+            guard !Task.isCancelled else { break }
+
+            let samples = audioCapture.peekSamples()
+            guard samples.count >= minSamples else { continue }
+
+            do {
+                let fullText = try await whisperEngine.transcribe(
+                    audioSamples: samples,
+                    language: settingsStore.selectedLanguage
+                )
+                guard !Task.isCancelled else { break }
+
+                let cleanText = Self.cleanTranscriptionText(fullText)
+                guard !cleanText.isEmpty else {
+                    lastStreamingResult = ""
+                    continue
+                }
+
+                // Text that is identical across two consecutive transcriptions is "stable"
+                let stableCount = Self.commonPrefixCount(cleanText, lastStreamingResult)
+                lastStreamingResult = cleanText
+
+                // Type newly stable characters that haven't been typed yet
+                if stableCount > streamingTypedCount {
+                    let startIdx = cleanText.index(cleanText.startIndex, offsetBy: streamingTypedCount)
+                    let endIdx = cleanText.index(cleanText.startIndex, offsetBy: stableCount)
+                    let newText = String(cleanText[startIdx..<endIdx])
+                    if !newText.isEmpty {
+                        Log.whisper.info("Streaming text: \(newText)")
+                        TextInjector.typeText(newText)
+                        streamingTypedCount = stableCount
+                    }
+                }
+            } catch {
+                Log.whisper.error("Streaming transcription step failed: \(error)")
+            }
         }
     }
 
     private func stopStreamingRecording() async {
-        let remainingSamples = await whisperEngine.stopStreaming()
-        streamingTask?.cancel()
-        streamingTask = nil
+        streamingLoopTask?.cancel()
+        streamingLoopTask = nil
 
-        // Try to flush unconfirmed segments from the last streaming state
-        var flushedText = ""
-        if let state = lastStreamingState {
-            let raw = state.unconfirmedSegments
-                .map(\.text)
-                .joined(separator: " ")
-            let unconfirmedText = Self.cleanTranscriptionText(raw)
-            if !unconfirmedText.isEmpty {
-                Log.whisper.info("Streaming flush unconfirmed: \(unconfirmedText)")
-                TextInjector.typeText(unconfirmedText)
-                flushedText = unconfirmedText
-            }
-        }
-
-        // FALLBACK: If streaming produced NO output at all, batch-transcribe
-        let totalStreamingOutput = streamingInjectedText + flushedText
-        if totalStreamingOutput.isEmpty && !remainingSamples.isEmpty {
-            Log.whisper.info("Streaming produced no output, falling back to batch transcription (\(remainingSamples.count) samples)")
-            isProcessing = true
-            recordingIndicator.showProcessing()
-
-            do {
-                let text = try await whisperEngine.transcribe(
-                    audioSamples: remainingSamples,
-                    language: settingsStore.selectedLanguage
-                )
-                Log.whisper.info("Batch fallback result: \(text)")
-                if !text.isEmpty {
-                    TextInjector.typeText(text)
-                }
-            } catch {
-                Log.whisper.error("Batch fallback transcription failed: \(error)")
-            }
-
-            isProcessing = false
-        }
-
-        lastStreamingState = nil
-        streamingInjectedText = ""
+        let samples = audioCapture.stopRecording()
         isRecording = false
+        Log.audio.info("Streaming stopped, \(samples.count) samples captured")
+
+        guard !samples.isEmpty else {
+            recordingIndicator.hide()
+            return
+        }
+
+        isProcessing = true
+        recordingIndicator.showProcessing()
+
+        do {
+            let fullText = try await whisperEngine.transcribe(
+                audioSamples: samples,
+                language: settingsStore.selectedLanguage
+            )
+            let cleanText = Self.cleanTranscriptionText(fullText)
+
+            if cleanText.count > streamingTypedCount {
+                let remaining = String(cleanText.dropFirst(streamingTypedCount))
+                if !remaining.isEmpty {
+                    Log.whisper.info("Streaming final: \(remaining)")
+                    TextInjector.typeText(remaining)
+                }
+            } else if streamingTypedCount == 0 && !cleanText.isEmpty {
+                Log.whisper.info("Streaming fallback: \(cleanText)")
+                TextInjector.typeText(cleanText)
+            }
+        } catch {
+            Log.whisper.error("Streaming final transcription failed: \(error)")
+        }
+
+        streamingTypedCount = 0
+        lastStreamingResult = ""
+        isProcessing = false
         recordingIndicator.hide()
         Log.audio.info("Streaming recording stopped")
     }
