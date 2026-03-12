@@ -82,6 +82,22 @@ final class AudioCapture: @unchecked Sendable {
 
         return samples
     }
+
+    /// Return the current buffer contents without clearing (for streaming peek).
+    func peekSamples() -> [Float] {
+        bufferLock.lock()
+        let samples = audioBuffer
+        bufferLock.unlock()
+        return samples
+    }
+
+    /// Current number of captured samples (lock-free count check).
+    var sampleCount: Int {
+        bufferLock.lock()
+        let count = audioBuffer.count
+        bufferLock.unlock()
+        return count
+    }
 }
 
 enum AudioCaptureError: LocalizedError {
