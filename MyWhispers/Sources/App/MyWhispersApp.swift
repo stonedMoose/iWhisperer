@@ -2,11 +2,26 @@ import SwiftUI
 
 @main
 struct MyWhispersApp: App {
-    @State private var settingsStore = SettingsStore()
+    @State private var settingsStore: SettingsStore
+    @State private var appState: AppState
+
+    init() {
+        let store = SettingsStore()
+        _settingsStore = State(initialValue: store)
+        _appState = State(initialValue: AppState(settingsStore: store))
+    }
 
     var body: some Scene {
-        MenuBarExtra("MyWhispers", systemImage: "mic") {
-            Text("Ready")
+        MenuBarExtra("MyWhispers", systemImage: appState.isRecording ? "mic.fill" : "mic") {
+            if appState.isProcessing {
+                Text("Transcribing...")
+            } else if appState.isRecording {
+                Text("Recording...")
+            } else if !appState.isModelLoaded {
+                Text("Loading model...")
+            } else {
+                Text("Ready")
+            }
 
             Divider()
 
