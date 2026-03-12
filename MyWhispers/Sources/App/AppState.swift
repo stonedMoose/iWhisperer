@@ -18,6 +18,7 @@ final class AppState {
     private let recordingIndicator = RecordingIndicator()
     private let settingsStore: SettingsStore
     nonisolated(unsafe) private var modelChangeObserver: NSObjectProtocol?
+    nonisolated(unsafe) private var permissionPollTask: Task<Void, Never>?
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
@@ -52,8 +53,27 @@ final class AppState {
             TextInjector.requestAccessibilityPermission()
         }
 
+        // Poll for permissions until both are granted
+        startPermissionPolling()
+
         // Load model regardless (so it's ready when permissions are granted)
         await loadModel()
+    }
+
+    private func startPermissionPolling() {
+        guard !micPermissionGranted || !accessibilityPermissionGranted else { return }
+
+        permissionPollTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(2))
+                guard let self, !Task.isCancelled else { return }
+
+                self.recheckPermissions()
+                if self.micPermissionGranted && self.accessibilityPermissionGranted {
+                    return
+                }
+            }
+        }
     }
 
     func openMicrophoneSettings() {
@@ -91,6 +111,7 @@ final class AppState {
     }
 
     deinit {
+        permissionPollTask?.cancel()
         if let observer = modelChangeObserver {
             NotificationCenter.default.removeObserver(observer)
         }
