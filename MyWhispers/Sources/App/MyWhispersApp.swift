@@ -93,7 +93,7 @@ struct MyWhispersApp: App {
                             await appState.toggleMeetingRecording()
                         }
                     }
-                    .disabled(!appState.isModelLoaded || appState.isRecording || appState.isProcessing)
+                    .disabled(appState.isRecording || appState.isProcessing)
                 }
             }
 

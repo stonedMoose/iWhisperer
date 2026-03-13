@@ -4,8 +4,6 @@ import OSLog
 actor WhisperXInstaller {
     static let shared = WhisperXInstaller()
 
-    private var installTask: Task<Void, Error>?
-
     var whisperXPath: String {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         return support.appendingPathComponent("MyWhispers/whisperx-env/bin/whisperx").path

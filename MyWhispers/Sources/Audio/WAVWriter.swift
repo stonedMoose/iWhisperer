@@ -2,6 +2,7 @@ import Foundation
 
 final class WAVWriter {
     private let fileHandle: FileHandle
+    private let queue = DispatchQueue(label: "com.mywhispers.wavwriter")
     let url: URL
     private var dataSize: UInt32 = 0
     private let sampleRate: UInt32 = 16000
@@ -50,26 +51,34 @@ final class WAVWriter {
         let data = samples.withUnsafeBufferPointer { buffer in
             Data(bytes: buffer.baseAddress!, count: buffer.count * MemoryLayout<Float>.size)
         }
-        fileHandle.write(data)
-        dataSize += UInt32(data.count)
+        queue.sync {
+            let newSize = UInt64(dataSize) + UInt64(data.count)
+            guard newSize <= UInt64(UInt32.max) else { return }
+            fileHandle.write(data)
+            dataSize = UInt32(newSize)
+        }
     }
 
     func finalize() throws {
-        // Patch data size at offset 40
-        fileHandle.seek(toFileOffset: 40)
-        var size = dataSize
-        fileHandle.write(Data(bytes: &size, count: 4))
+        queue.sync {
+            // Patch data size at offset 40
+            fileHandle.seek(toFileOffset: 40)
+            var size = dataSize
+            fileHandle.write(Data(bytes: &size, count: 4))
 
-        // Patch RIFF size at offset 4
-        fileHandle.seek(toFileOffset: 4)
-        var riffSize = dataSize + 36
-        fileHandle.write(Data(bytes: &riffSize, count: 4))
+            // Patch RIFF size at offset 4
+            fileHandle.seek(toFileOffset: 4)
+            var riffSize = dataSize + 36
+            fileHandle.write(Data(bytes: &riffSize, count: 4))
 
-        fileHandle.closeFile()
+            fileHandle.closeFile()
+        }
     }
 
     func cancel() {
-        fileHandle.closeFile()
+        queue.sync {
+            fileHandle.closeFile()
+        }
         try? FileManager.default.removeItem(at: url)
     }
 }
