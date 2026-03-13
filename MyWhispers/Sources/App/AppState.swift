@@ -1,7 +1,9 @@
+import AppKit
 import AVFoundation
 import OSLog
 import SwiftUI
 import KeyboardShortcuts
+import UniformTypeIdentifiers
 
 
 @Observable
@@ -17,6 +19,10 @@ final class AppState {
     var accessibilityPermissionGranted = false
     var showPermissionAlert = false
     var permissionAlertMessage = ""
+    var isMeetingRecording = false
+    var isMeetingProcessing = false
+    var meetingStatusMessage = ""
+    var meetingElapsedTime: TimeInterval = 0
 
     private let whisperEngine = WhisperCppEngine()
     private let modelManager = ModelManager.shared
@@ -29,6 +35,8 @@ final class AppState {
     private var streamingTypedWordCount = 0
     private var streamingPreviousWords: [String] = []
     private var streamingPromptTokens: [Int32] = []
+    private var meetingRecorder: MeetingRecorder?
+    private var meetingTimerTask: Task<Void, Never>?
 
     private static let streamStepMs = 3000
     private static let streamLengthMs = 10000
@@ -36,6 +44,7 @@ final class AppState {
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
+        self.meetingRecorder = MeetingRecorder(audioCapture: audioCapture, settingsStore: settingsStore)
         setupHotkey()
         setupModelChangeListener()
         Task {
@@ -169,6 +178,11 @@ final class AppState {
                 await self?.stopRecordingAndTranscribe()
             }
         }
+        KeyboardShortcuts.onKeyDown(for: .meetingRecord) { [weak self] in
+            Task { @MainActor in
+                await self?.toggleMeetingRecording()
+            }
+        }
     }
 
     func loadModel() async {
@@ -198,7 +212,7 @@ final class AppState {
     // MARK: - Recording
 
     private func startRecording() {
-        guard isModelLoaded, !isProcessing else { return }
+        guard isModelLoaded, !isProcessing, !isMeetingRecording, !isMeetingProcessing else { return }
 
         recheckPermissions()
 
@@ -403,5 +417,118 @@ final class AppState {
             if wa == wb { count += 1 } else { break }
         }
         return count
+    }
+
+    // MARK: - Meeting Recording
+
+    func toggleMeetingRecording() async {
+        if isMeetingRecording {
+            await stopMeetingAndTranscribe()
+        } else {
+            startMeetingRecording()
+        }
+    }
+
+    private func startMeetingRecording() {
+        guard !isRecording, !isProcessing, !isMeetingProcessing else { return }
+
+        recheckPermissions()
+        guard micPermissionGranted else {
+            showPermissionError("Microphone access is required. Please grant access in System Settings > Privacy & Security > Microphone.")
+            return
+        }
+
+        do {
+            try meetingRecorder?.startRecording()
+            isMeetingRecording = true
+            meetingElapsedTime = 0
+            startMeetingTimer()
+            Log.meeting.info("Meeting recording started")
+        } catch {
+            Log.meeting.error("Failed to start meeting recording: \(error)")
+        }
+    }
+
+    private func stopMeetingAndTranscribe() async {
+        guard isMeetingRecording, let recorder = meetingRecorder else { return }
+
+        meetingTimerTask?.cancel()
+        meetingTimerTask = nil
+
+        guard let wavURL = recorder.stopRecording() else {
+            isMeetingRecording = false
+            return
+        }
+
+        isMeetingRecording = false
+        isMeetingProcessing = true
+        meetingStatusMessage = "Checking WhisperX..."
+
+        // Ensure WhisperX is installed
+        let installer = WhisperXInstaller.shared
+        if await !installer.isInstalled {
+            meetingStatusMessage = "Installing WhisperX..."
+            do {
+                try await installer.install { [weak self] status in
+                    Task { @MainActor in
+                        self?.meetingStatusMessage = status
+                    }
+                }
+            } catch {
+                isMeetingProcessing = false
+                meetingStatusMessage = ""
+                showPermissionError(error.localizedDescription)
+                return
+            }
+        }
+
+        meetingStatusMessage = "Transcribing meeting..."
+
+        do {
+            let markdown = try await recorder.transcribe(wavURL: wavURL)
+            isMeetingProcessing = false
+            meetingStatusMessage = ""
+            await presentSaveDialog(markdown: markdown)
+        } catch {
+            isMeetingProcessing = false
+            meetingStatusMessage = ""
+            Log.meeting.error("Meeting transcription failed: \(error)")
+            showPermissionError(error.localizedDescription)
+        }
+    }
+
+    func cancelMeetingTranscription() {
+        meetingRecorder?.cancelTranscription()
+        isMeetingProcessing = false
+        meetingStatusMessage = ""
+    }
+
+    private func startMeetingTimer() {
+        meetingTimerTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { break }
+                meetingElapsedTime = meetingRecorder?.elapsedTime ?? 0
+            }
+        }
+    }
+
+    private func presentSaveDialog(markdown: String) async {
+        let panel = NSSavePanel()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd-HHmm"
+        panel.nameFieldStringValue = "Meeting-\(formatter.string(from: Date())).md"
+        panel.allowedContentTypes = [.plainText]
+        panel.directoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+
+        let response = await panel.begin()
+        if response == .OK, let url = panel.url {
+            do {
+                try markdown.write(to: url, atomically: true, encoding: .utf8)
+                Log.meeting.info("Meeting transcript saved to: \(url.path)")
+            } catch {
+                Log.meeting.error("Failed to save transcript: \(error)")
+            }
+        }
     }
 }
