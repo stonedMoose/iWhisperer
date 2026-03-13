@@ -73,12 +73,12 @@ final class MeetingRecorder {
             .appendingPathComponent("mywhispers-meeting-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
 
-        let whisperXPath = await installer.whisperXPath
+        let pythonPath = await installer.pythonPath
         let model = settingsStore.selectedModel.rawValue
         let language = settingsStore.selectedLanguage
         let langArg = language == .auto ? nil : language.rawValue
 
-        var arguments = [
+        var whisperXArgs = [
             wavURL.path,
             "--model", model,
             "--device", "cpu",
@@ -89,12 +89,30 @@ final class MeetingRecorder {
             "--output_dir", outputDir.path
         ]
         if let lang = langArg {
-            arguments.append(contentsOf: ["--language", lang])
+            whisperXArgs.append(contentsOf: ["--language", lang])
         }
 
-        Log.meeting.info("Running WhisperX: \(whisperXPath)")
+        // Write a wrapper script that patches torch.load before running whisperx
+        // (PyTorch 2.6 changed weights_only default to True, breaking pyannote model loading)
+        let scriptURL = outputDir.appendingPathComponent("run_whisperx.py")
+        let script = """
+        import torch
+        _original_load = torch.load
+        def _patched_load(*args, **kwargs):
+            kwargs['weights_only'] = False
+            return _original_load(*args, **kwargs)
+        torch.load = _patched_load
+        from whisperx.__main__ import cli
+        cli()
+        """
+        try script.write(to: scriptURL, atomically: true, encoding: .utf8)
 
-        let (exitCode, stderr) = try await runWhisperX(path: whisperXPath, arguments: arguments)
+        Log.meeting.info("Running WhisperX via Python: \(pythonPath)")
+
+        let (exitCode, stderr) = try await runWhisperX(
+            path: pythonPath,
+            arguments: [scriptURL.path] + whisperXArgs
+        )
 
         guard exitCode == 0 else {
             try? FileManager.default.removeItem(at: outputDir)

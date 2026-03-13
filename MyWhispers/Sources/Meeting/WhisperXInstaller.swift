@@ -4,9 +4,17 @@ import OSLog
 actor WhisperXInstaller {
     static let shared = WhisperXInstaller()
 
-    var whisperXPath: String {
+    private var envDir: URL {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return support.appendingPathComponent("MyWhispers/whisperx-env/bin/whisperx").path
+        return support.appendingPathComponent("MyWhispers/whisperx-env")
+    }
+
+    var whisperXPath: String {
+        envDir.appendingPathComponent("bin/whisperx").path
+    }
+
+    var pythonPath: String {
+        envDir.appendingPathComponent("bin/python3").path
     }
 
     var isInstalled: Bool {
@@ -15,9 +23,6 @@ actor WhisperXInstaller {
 
     func install(onStatus: @escaping @Sendable (String) -> Void) async throws {
         if isInstalled { return }
-
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let envDir = support.appendingPathComponent("MyWhispers/whisperx-env")
 
         // Find python3
         let pythonPath = try findPython()
