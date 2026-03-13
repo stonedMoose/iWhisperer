@@ -98,6 +98,25 @@ struct SettingsView: View {
                     Text("Required for speaker identification. You must also accept the pyannote speaker-diarization model terms.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    HStack {
+                        Text("Save to:")
+                        Text(settings.transcriptDirectory.lastPathComponent)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer()
+                        Button("Choose...") {
+                            let panel = NSOpenPanel()
+                            panel.canChooseFiles = false
+                            panel.canChooseDirectories = true
+                            panel.allowsMultipleSelection = false
+                            panel.directoryURL = settings.transcriptDirectory
+                            if panel.runModal() == .OK, let url = panel.url {
+                                settings.transcriptDirectory = url
+                            }
+                        }
+                    }
                 }
 
                 Spacer()

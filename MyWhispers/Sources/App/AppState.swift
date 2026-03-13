@@ -491,7 +491,7 @@ final class AppState {
             let markdown = try await recorder.transcribe(wavURL: wavURL)
             isMeetingProcessing = false
             meetingStatusMessage = ""
-            await presentSaveDialog(markdown: markdown)
+            saveTranscript(markdown: markdown)
         } catch {
             isMeetingProcessing = false
             meetingStatusMessage = ""
@@ -533,22 +533,21 @@ final class AppState {
         }
     }
 
-    private func presentSaveDialog(markdown: String) async {
-        let panel = NSSavePanel()
+    private func saveTranscript(markdown: String) {
+        let dir = settingsStore.transcriptDirectory
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd-HHmm"
-        panel.nameFieldStringValue = "Meeting-\(formatter.string(from: Date())).md"
-        panel.allowedContentTypes = [.plainText]
-        panel.directoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+        let filename = "Meeting-\(formatter.string(from: Date())).md"
+        let url = dir.appendingPathComponent(filename)
 
-        let response = await panel.begin()
-        if response == .OK, let url = panel.url {
-            do {
-                try markdown.write(to: url, atomically: true, encoding: .utf8)
-                Log.meeting.info("Meeting transcript saved to: \(url.path)")
-            } catch {
-                Log.meeting.error("Failed to save transcript: \(error)")
-            }
+        do {
+            try markdown.write(to: url, atomically: true, encoding: .utf8)
+            Log.meeting.info("Meeting transcript saved to: \(url.path)")
+        } catch {
+            Log.meeting.error("Failed to save transcript: \(error)")
+            showPermissionError("Failed to save transcript: \(error.localizedDescription)")
         }
     }
 }

@@ -24,6 +24,9 @@ final class SettingsStore {
     @ObservationIgnored
     @AppStorage("hfToken") private var _hfToken: String = ""
 
+    @ObservationIgnored
+    @AppStorage("transcriptDirectory") private var _transcriptDirectory: String = ""
+
     var selectedModel: WhisperModel {
         get {
             access(keyPath: \.selectedModel)
@@ -109,6 +112,21 @@ final class SettingsStore {
         set {
             withMutation(keyPath: \.hfToken) {
                 _hfToken = newValue
+            }
+        }
+    }
+
+    var transcriptDirectory: URL {
+        get {
+            access(keyPath: \.transcriptDirectory)
+            if _transcriptDirectory.isEmpty {
+                return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+            }
+            return URL(fileURLWithPath: _transcriptDirectory)
+        }
+        set {
+            withMutation(keyPath: \.transcriptDirectory) {
+                _transcriptDirectory = newValue.path
             }
         }
     }
