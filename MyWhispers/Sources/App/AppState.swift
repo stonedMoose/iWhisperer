@@ -23,6 +23,7 @@ final class AppState {
     var isMeetingProcessing = false
     var meetingStatusMessage = ""
     var meetingElapsedTime: TimeInterval = 0
+    var isWhisperXInstalled = false
 
     private let whisperEngine = WhisperCppEngine()
     private let modelManager = ModelManager.shared
@@ -49,6 +50,7 @@ final class AppState {
         setupModelChangeListener()
         Task {
             await checkPermissionsAndSetup()
+            isWhisperXInstalled = await WhisperXInstaller.shared.isInstalled
         }
     }
 
@@ -474,6 +476,7 @@ final class AppState {
                         self?.meetingStatusMessage = status
                     }
                 }
+                isWhisperXInstalled = true
             } catch {
                 isMeetingProcessing = false
                 meetingStatusMessage = ""
@@ -495,6 +498,23 @@ final class AppState {
             Log.meeting.error("Meeting transcription failed: \(error)")
             showPermissionError(error.localizedDescription)
         }
+    }
+
+    func installWhisperX() async {
+        isMeetingProcessing = true
+        meetingStatusMessage = "Installing WhisperX..."
+        do {
+            try await WhisperXInstaller.shared.install { [weak self] status in
+                Task { @MainActor in
+                    self?.meetingStatusMessage = status
+                }
+            }
+            isWhisperXInstalled = true
+        } catch {
+            showPermissionError(error.localizedDescription)
+        }
+        isMeetingProcessing = false
+        meetingStatusMessage = ""
     }
 
     func cancelMeetingTranscription() {
