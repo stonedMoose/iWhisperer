@@ -4,6 +4,7 @@ import OSLog
 import SwiftUI
 import KeyboardShortcuts
 import UniformTypeIdentifiers
+import UserNotifications
 
 
 @Observable
@@ -48,6 +49,7 @@ final class AppState {
         self.meetingRecorder = MeetingRecorder(audioCapture: audioCapture, settingsStore: settingsStore)
         setupHotkey()
         setupModelChangeListener()
+        setupNotificationDelegate()
         Task {
             await checkPermissionsAndSetup()
             isWhisperXInstalled = await WhisperXInstaller.shared.isInstalled
@@ -545,9 +547,54 @@ final class AppState {
         do {
             try markdown.write(to: url, atomically: true, encoding: .utf8)
             Log.meeting.info("Meeting transcript saved to: \(url.path)")
+            sendTranscriptNotification(fileURL: url)
         } catch {
             Log.meeting.error("Failed to save transcript: \(error)")
             showPermissionError("Failed to save transcript: \(error.localizedDescription)")
         }
+    }
+
+    private func sendTranscriptNotification(fileURL: URL) {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            guard granted else { return }
+
+            let content = UNMutableNotificationContent()
+            content.title = "Meeting Transcript Ready"
+            content.body = "Saved to \(fileURL.lastPathComponent)"
+            content.sound = .default
+            content.userInfo = ["fileURL": fileURL.absoluteString]
+
+            let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+            center.add(request)
+        }
+    }
+
+    private func setupNotificationDelegate() {
+        UNUserNotificationCenter.current().delegate = NotificationHandler.shared
+    }
+}
+
+final class NotificationHandler: NSObject, UNUserNotificationCenterDelegate, Sendable {
+    static let shared = NotificationHandler()
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        if let urlString = response.notification.request.content.userInfo["fileURL"] as? String,
+           let url = URL(string: urlString) {
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+        }
+        completionHandler()
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
     }
 }
