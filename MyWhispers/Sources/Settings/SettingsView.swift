@@ -13,46 +13,102 @@ struct SettingsView: View {
     var body: some View {
         @Bindable var settings = settings
 
-        Form {
-            Section("Speech Recognition") {
-                Picker("Model", selection: $settings.selectedModel) {
-                    ForEach(WhisperModel.allCases) { model in
-                        Text(model.displayName).tag(model)
-                    }
-                }
-                .onChange(of: settings.selectedModel) { _, _ in
-                    NotificationCenter.default.post(name: .modelChanged, object: nil)
-                }
+        HStack(alignment: .top, spacing: 0) {
+            // Left column
+            VStack(alignment: .leading, spacing: 20) {
+                // Speech Recognition
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Speech Recognition", systemImage: "waveform")
+                        .font(.headline)
 
-                Picker("Language", selection: $settings.selectedLanguage) {
-                    ForEach(WhisperLanguage.allCases) { language in
-                        Text(language.displayName).tag(language)
-                    }
-                }
-            }
-
-            Section("Shortcut") {
-                KeyboardShortcuts.Recorder("Hold to record:", name: .holdToRecord)
-            }
-
-            Section("General") {
-                Toggle("Launch at login", isOn: $settings.launchAtLogin)
-                    .onChange(of: settings.launchAtLogin) { _, newValue in
-                        do {
-                            if newValue {
-                                try SMAppService.mainApp.register()
-                            } else {
-                                try SMAppService.mainApp.unregister()
-                            }
-                        } catch {
-                            settings.launchAtLogin = !newValue
-                            Log.general.error("Failed to update login item: \(error)")
+                    Picker("Model", selection: $settings.selectedModel) {
+                        ForEach(WhisperModel.allCases) { model in
+                            Text(model.displayName).tag(model)
                         }
                     }
+                    .onChange(of: settings.selectedModel) { _, _ in
+                        NotificationCenter.default.post(name: .modelChanged, object: nil)
+                    }
+                }
+
+                Divider()
+
+                // Shortcut
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Shortcut", systemImage: "keyboard")
+                        .font(.headline)
+
+                    KeyboardShortcuts.Recorder("Hold to record:", name: .holdToRecord)
+                }
+
+                Divider()
+
+                // General
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("General", systemImage: "gearshape")
+                        .font(.headline)
+
+                    Toggle("Launch at login", isOn: $settings.launchAtLogin)
+                        .onChange(of: settings.launchAtLogin) { _, newValue in
+                            do {
+                                if newValue {
+                                    try SMAppService.mainApp.register()
+                                } else {
+                                    try SMAppService.mainApp.unregister()
+                                }
+                            } catch {
+                                settings.launchAtLogin = !newValue
+                                Log.general.error("Failed to update login item: \(error)")
+                            }
+                        }
+                }
+
+                Divider()
+
+                // Streaming
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Streaming", systemImage: "antenna.radiowaves.left.and.right")
+                        .font(.headline)
+
+                    Toggle("Enable streaming mode", isOn: $settings.streamingMode)
+
+                    Text("Type text progressively as you speak instead of waiting until you stop recording.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
             }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Divider()
+
+            // Right column — Preferred Languages
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Preferred Languages", systemImage: "globe")
+                    .font(.headline)
+
+                Text("Shown in the menu bar for quick switching.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(WhisperLanguage.allCases.filter { $0 != .auto }) { language in
+                        Toggle(language.displayName, isOn: Binding(
+                            get: { settings.isPreferredLanguage(language) },
+                            set: { _ in settings.togglePreferredLanguage(language) }
+                        ))
+                        .toggleStyle(.checkbox)
+                    }
+                }
+
+                Spacer()
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .formStyle(.grouped)
-        .frame(width: 380, height: 280)
+        .frame(width: 580, height: 400)
     }
 }
 
