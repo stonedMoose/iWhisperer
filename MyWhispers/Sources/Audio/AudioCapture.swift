@@ -5,6 +5,7 @@ final class AudioCapture: @unchecked Sendable {
     private let engine = AVAudioEngine()
     private var audioBuffer: [Float] = []
     private let bufferLock = NSLock()
+    private var onSamples: (([Float]) -> Void)?
 
     /// Request microphone permission. Returns true if granted.
     static func requestPermission() async -> Bool {
@@ -13,6 +14,12 @@ final class AudioCapture: @unchecked Sendable {
                 continuation.resume(returning: granted)
             }
         }
+    }
+
+    func setOnSamples(_ callback: (([Float]) -> Void)?) {
+        bufferLock.lock()
+        onSamples = callback
+        bufferLock.unlock()
     }
 
     /// Start capturing audio from the microphone at 16kHz mono (what whisper.cpp expects).
@@ -62,7 +69,9 @@ final class AudioCapture: @unchecked Sendable {
                 ))
                 self.bufferLock.lock()
                 self.audioBuffer.append(contentsOf: samples)
+                let callback = self.onSamples
                 self.bufferLock.unlock()
+                callback?(samples)
             }
         }
 
@@ -78,6 +87,7 @@ final class AudioCapture: @unchecked Sendable {
         bufferLock.lock()
         let samples = audioBuffer
         audioBuffer.removeAll()
+        onSamples = nil
         bufferLock.unlock()
 
         return samples
