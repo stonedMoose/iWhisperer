@@ -20,7 +20,7 @@ final class AudioCapture: @unchecked Sendable {
         let inputNode = engine.inputNode
         let nativeFormat = inputNode.outputFormat(forBus: 0)
 
-        // WhisperKit expects 16kHz mono Float32 audio
+        // whisper.cpp expects 16kHz mono Float32 audio
         guard let recordingFormat = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
             sampleRate: 16000,

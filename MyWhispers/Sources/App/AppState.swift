@@ -18,12 +18,21 @@ final class AppState {
     var showPermissionAlert = false
     var permissionAlertMessage = ""
 
-    private let whisperEngine = WhisperEngine()
+    private let whisperEngine = WhisperCppEngine()
+    private let modelManager = ModelManager.shared
     private let audioCapture = AudioCapture()
     private let recordingIndicator = RecordingIndicator()
     private let settingsStore: SettingsStore
-    nonisolated(unsafe) private var modelChangeObserver: NSObjectProtocol?
-    nonisolated(unsafe) private var permissionPollTask: Task<Void, Never>?
+    private var modelChangeObserver: NSObjectProtocol?
+    private var permissionPollTask: Task<Void, Never>?
+    private var streamingLoopTask: Task<Void, Never>?
+    private var streamingTypedWordCount = 0
+    private var streamingPreviousWords: [String] = []
+    private var streamingPromptTokens: [Int32] = []
+
+    private static let streamStepMs = 3000
+    private static let streamLengthMs = 10000
+    private static let streamKeepMs = 200
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
@@ -141,9 +150,11 @@ final class AppState {
     }
 
     deinit {
-        permissionPollTask?.cancel()
-        if let observer = modelChangeObserver {
-            NotificationCenter.default.removeObserver(observer)
+        MainActor.assumeIsolated {
+            permissionPollTask?.cancel()
+            if let observer = modelChangeObserver {
+                NotificationCenter.default.removeObserver(observer)
+            }
         }
     }
 
@@ -169,11 +180,12 @@ final class AppState {
         do {
             Log.whisper.info("Loading model: \(model.rawValue)")
             isDownloadingModel = true
-            try await whisperEngine.loadModel(model) { [weak self] progress in
+            let path = try await modelManager.ensureModel(model) { [weak self] progress in
                 Task { @MainActor in
                     self?.downloadProgress = progress
                 }
             }
+            try await whisperEngine.loadModel(path: path)
             isDownloadingModel = false
             isModelLoaded = true
             Log.whisper.info("Model loaded successfully")
@@ -185,16 +197,9 @@ final class AppState {
 
     // MARK: - Recording
 
-    private static let streamStepMs = 3000 // How often to transcribe during streaming (ms)
-
-    private var streamingLoopTask: Task<Void, Never>?
-    private var streamingTypedCount = 0
-    private var lastStreamingResult = ""
-
     private func startRecording() {
         guard isModelLoaded, !isProcessing else { return }
 
-        // Recheck permissions each time
         recheckPermissions()
 
         guard micPermissionGranted else {
@@ -253,45 +258,26 @@ final class AppState {
         isProcessing = true
         recordingIndicator.showProcessing()
 
-        do {
-            let text = try await whisperEngine.transcribe(
-                audioSamples: samples,
-                language: settingsStore.selectedLanguage
-            )
-            Log.whisper.info("Transcription result: \(text)")
-            if !text.isEmpty {
-                TextInjector.typeText(text)
-            }
-        } catch {
-            Log.whisper.error("Transcription failed: \(error)")
+        let language = settingsStore.selectedLanguage
+        let text = await whisperEngine.transcribe(
+            samples: samples,
+            language: language == .auto ? "auto" : language.rawValue
+        )
+        Log.whisper.info("Transcription result: \(text)")
+        if !text.isEmpty {
+            TextInjector.typeText(text)
         }
 
         isProcessing = false
         recordingIndicator.hide()
     }
 
-    // MARK: - Streaming mode (sliding window)
-
-    private static func cleanTranscriptionText(_ text: String) -> String {
-        text.replacingOccurrences(
-            of: "<\\|[^|]*\\|>",
-            with: "",
-            options: .regularExpression
-        ).trimmingCharacters(in: .whitespaces)
-    }
-
-    /// Number of leading characters that are identical in both strings.
-    private static func commonPrefixCount(_ a: String, _ b: String) -> Int {
-        var count = 0
-        for (ca, cb) in zip(a, b) {
-            if ca == cb { count += 1 } else { break }
-        }
-        return count
-    }
+    // MARK: - Streaming mode (sliding window + LocalAgreement)
 
     private func startStreamingRecording() {
-        streamingTypedCount = 0
-        lastStreamingResult = ""
+        streamingTypedWordCount = 0
+        streamingPreviousWords = []
+        streamingPromptTokens = []
 
         do {
             try audioCapture.startRecording()
@@ -317,40 +303,47 @@ final class AppState {
             try? await Task.sleep(for: .milliseconds(Self.streamStepMs))
             guard !Task.isCancelled else { break }
 
-            let samples = audioCapture.peekSamples()
-            guard samples.count >= minSamples else { continue }
+            let window = audioCapture.getWindow(
+                lengthMs: Self.streamLengthMs,
+                keepMs: Self.streamKeepMs
+            )
+            guard window.count >= minSamples else { continue }
 
-            do {
-                let fullText = try await whisperEngine.transcribe(
-                    audioSamples: samples,
-                    language: settingsStore.selectedLanguage
-                )
-                guard !Task.isCancelled else { break }
+            let language = settingsStore.selectedLanguage
+            let langStr = language == .auto ? "auto" : language.rawValue
 
-                let cleanText = Self.cleanTranscriptionText(fullText)
-                guard !cleanText.isEmpty else {
-                    lastStreamingResult = ""
-                    continue
-                }
+            let (text, tokens) = await whisperEngine.transcribeWindow(
+                samples: window,
+                language: langStr,
+                promptTokens: streamingPromptTokens
+            )
 
-                // Text that is identical across two consecutive transcriptions is "stable"
-                let stableCount = Self.commonPrefixCount(cleanText, lastStreamingResult)
-                lastStreamingResult = cleanText
+            guard !Task.isCancelled else { break }
 
-                // Type newly stable characters that haven't been typed yet
-                if stableCount > streamingTypedCount {
-                    let startIdx = cleanText.index(cleanText.startIndex, offsetBy: streamingTypedCount)
-                    let endIdx = cleanText.index(cleanText.startIndex, offsetBy: stableCount)
-                    let newText = String(cleanText[startIdx..<endIdx])
-                    if !newText.isEmpty {
-                        Log.whisper.info("Streaming text: \(newText)")
-                        TextInjector.typeText(newText)
-                        streamingTypedCount = stableCount
-                    }
-                }
-            } catch {
-                Log.whisper.error("Streaming transcription step failed: \(error)")
+            let currentWords = Self.splitIntoWords(text)
+            guard !currentWords.isEmpty else {
+                streamingPreviousWords = []
+                continue
             }
+
+            // Word-level LocalAgreement: longest common word prefix
+            let stableCount = Self.longestCommonWordPrefix(currentWords, streamingPreviousWords)
+            streamingPreviousWords = currentWords
+
+            // Type only newly confirmed words
+            if stableCount > streamingTypedWordCount {
+                let newWords = Array(currentWords[streamingTypedWordCount..<stableCount])
+                let prefix = streamingTypedWordCount == 0 ? "" : " "
+                let newText = prefix + newWords.joined(separator: " ")
+                if !newText.isEmpty {
+                    Log.whisper.info("Streaming text: \(newText)")
+                    TextInjector.typeText(newText)
+                    streamingTypedWordCount = stableCount
+                }
+            }
+
+            // Feed tokens as prompt context for next iteration
+            streamingPromptTokens = tokens
         }
     }
 
@@ -370,31 +363,45 @@ final class AppState {
         isProcessing = true
         recordingIndicator.showProcessing()
 
-        do {
-            let fullText = try await whisperEngine.transcribe(
-                audioSamples: samples,
-                language: settingsStore.selectedLanguage
-            )
-            let cleanText = Self.cleanTranscriptionText(fullText)
+        // Final full inference on all captured audio
+        let language = settingsStore.selectedLanguage
+        let langStr = language == .auto ? "auto" : language.rawValue
+        let finalText = await whisperEngine.transcribe(samples: samples, language: langStr)
+        let finalWords = Self.splitIntoWords(finalText)
 
-            if cleanText.count > streamingTypedCount {
-                let remaining = String(cleanText.dropFirst(streamingTypedCount))
-                if !remaining.isEmpty {
-                    Log.whisper.info("Streaming final: \(remaining)")
-                    TextInjector.typeText(remaining)
-                }
-            } else if streamingTypedCount == 0 && !cleanText.isEmpty {
-                Log.whisper.info("Streaming fallback: \(cleanText)")
-                TextInjector.typeText(cleanText)
+        if finalWords.count > streamingTypedWordCount {
+            let remaining = Array(finalWords[streamingTypedWordCount...])
+            let prefix = streamingTypedWordCount == 0 ? "" : " "
+            let remainingText = prefix + remaining.joined(separator: " ")
+            if !remainingText.isEmpty {
+                Log.whisper.info("Streaming final: \(remainingText)")
+                TextInjector.typeText(remainingText)
             }
-        } catch {
-            Log.whisper.error("Streaming final transcription failed: \(error)")
+        } else if streamingTypedWordCount == 0 && !finalText.isEmpty {
+            Log.whisper.info("Streaming fallback: \(finalText)")
+            TextInjector.typeText(finalText)
         }
 
-        streamingTypedCount = 0
-        lastStreamingResult = ""
+        streamingTypedWordCount = 0
+        streamingPreviousWords = []
+        streamingPromptTokens = []
         isProcessing = false
         recordingIndicator.hide()
-        Log.audio.info("Streaming recording stopped")
+    }
+
+    // MARK: - LocalAgreement helpers
+
+    /// Split text into words, filtering empty strings.
+    private static func splitIntoWords(_ text: String) -> [String] {
+        text.split(separator: " ").map(String.init).filter { !$0.isEmpty }
+    }
+
+    /// Longest common word prefix between two word arrays.
+    private static func longestCommonWordPrefix(_ a: [String], _ b: [String]) -> Int {
+        var count = 0
+        for (wa, wb) in zip(a, b) {
+            if wa == wb { count += 1 } else { break }
+        }
+        return count
     }
 }
