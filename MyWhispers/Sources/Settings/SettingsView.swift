@@ -5,6 +5,7 @@ import KeyboardShortcuts
 
 extension KeyboardShortcuts.Name {
     static let holdToRecord = Self("holdToRecord")
+    static let meetingRecord = Self("meetingRecord")
 }
 
 struct SettingsView: View {
@@ -77,6 +78,28 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                Divider()
+
+                // Meeting
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Meeting", systemImage: "person.3")
+                        .font(.headline)
+
+                    KeyboardShortcuts.Recorder("Meeting shortcut:", name: .meetingRecord)
+
+                    SecureField("HuggingFace Token", text: $settings.hfToken)
+                        .textFieldStyle(.roundedBorder)
+
+                    Link("Get a token at huggingface.co",
+                         destination: URL(string: "https://huggingface.co/settings/tokens")!)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Text("Required for speaker identification. You must also accept the pyannote speaker-diarization model terms.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Spacer()
             }
             .padding(20)
@@ -108,7 +131,7 @@ struct SettingsView: View {
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(width: 580, height: 400)
+        .frame(width: 580, height: 520)
     }
 }
 
