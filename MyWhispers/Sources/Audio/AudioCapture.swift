@@ -15,7 +15,7 @@ final class AudioCapture: @unchecked Sendable {
         }
     }
 
-    /// Start capturing audio from the microphone at 16kHz mono (what WhisperKit expects).
+    /// Start capturing audio from the microphone at 16kHz mono (what whisper.cpp expects).
     func startRecording() throws {
         let inputNode = engine.inputNode
         let nativeFormat = inputNode.outputFormat(forBus: 0)
@@ -83,7 +83,23 @@ final class AudioCapture: @unchecked Sendable {
         return samples
     }
 
-    /// Return the current buffer contents without clearing (for streaming peek).
+    /// Return the last `lengthMs` of audio, retaining `keepMs` overlap context.
+    /// Used by streaming mode to get a sliding window of audio.
+    func getWindow(lengthMs: Int, keepMs: Int) -> [Float] {
+        bufferLock.lock()
+        let allSamples = audioBuffer
+        bufferLock.unlock()
+
+        let lengthSamples = lengthMs * 16  // 16kHz = 16 samples per ms
+        let maxSamples = min(allSamples.count, lengthSamples)
+
+        if maxSamples <= 0 { return [] }
+
+        // Take the last `maxSamples` from the buffer
+        return Array(allSamples.suffix(maxSamples))
+    }
+
+    /// Return all samples captured so far without clearing the buffer.
     func peekSamples() -> [Float] {
         bufferLock.lock()
         let samples = audioBuffer
@@ -91,13 +107,14 @@ final class AudioCapture: @unchecked Sendable {
         return samples
     }
 
-    /// Current number of captured samples (lock-free count check).
+    /// Current number of captured samples.
     var sampleCount: Int {
         bufferLock.lock()
         let count = audioBuffer.count
         bufferLock.unlock()
         return count
     }
+
 }
 
 enum AudioCaptureError: LocalizedError {
