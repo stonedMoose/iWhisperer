@@ -21,6 +21,9 @@ final class SettingsStore {
     @ObservationIgnored
     @AppStorage("streamingMode") private var _streamingMode: Bool = false
 
+    @ObservationIgnored
+    @AppStorage("hfToken") private var _hfToken: String = ""
+
     var selectedModel: WhisperModel {
         get {
             access(keyPath: \.selectedModel)
@@ -94,6 +97,18 @@ final class SettingsStore {
         set {
             withMutation(keyPath: \.streamingMode) {
                 _streamingMode = newValue
+            }
+        }
+    }
+
+    var hfToken: String {
+        get {
+            access(keyPath: \.hfToken)
+            return _hfToken
+        }
+        set {
+            withMutation(keyPath: \.hfToken) {
+                _hfToken = newValue
             }
         }
     }
