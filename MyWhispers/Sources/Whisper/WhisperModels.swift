@@ -9,6 +9,14 @@ enum WhisperModel: String, CaseIterable, Identifiable, Codable {
 
     var id: String { rawValue }
 
+    /// The GGML filename component (e.g., "large-v3" for ggml-large-v3.bin)
+    var ggmlName: String { rawValue }
+
+    /// HuggingFace download URL for the GGML model file.
+    var downloadURL: URL {
+        URL(string: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-\(ggmlName).bin")!
+    }
+
     var displayName: String {
         switch self {
         case .tiny: "Tiny (~75 MB)"
