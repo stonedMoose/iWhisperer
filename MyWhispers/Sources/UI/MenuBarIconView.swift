@@ -17,11 +17,15 @@ final class MenuBarIconState {
     private var pulseTimer: Timer?
 
     init() {
-        self.image = Self.renderIcon(dotColor: nil, dotVisible: true)
+        self.image = Self.renderIcon(dotColor: nil)
+    }
+
+    private var shouldPulse: Bool {
+        isMeetingRecording || isProcessing || isMeetingProcessing
     }
 
     private func update() {
-        if isMeetingRecording {
+        if shouldPulse {
             startPulse()
         } else {
             stopPulse()
@@ -36,42 +40,62 @@ final class MenuBarIconState {
         } else if isRecording {
             dotColor = .red
         } else if isProcessing || isMeetingProcessing {
-            dotColor = .orange
+            dotColor = dotVisible ? .orange : .orange.withAlphaComponent(0.3)
         } else {
             dotColor = nil
         }
-        image = Self.renderIcon(dotColor: dotColor, dotVisible: true)
+        image = Self.renderIcon(dotColor: dotColor)
     }
 
-    private static func renderIcon(dotColor: NSColor?, dotVisible: Bool) -> NSImage {
+    private static func renderIcon(dotColor: NSColor?) -> NSImage {
         let size = NSSize(width: 18, height: 18)
-        let img = NSImage(size: size, flipped: false) { rect in
-            // Draw waveform SF Symbol as template
-            let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-            guard let symbol = NSImage(systemSymbolName: "waveform", accessibilityDescription: "MyWhispers")?
-                .withSymbolConfiguration(config) else { return false }
 
-            let symbolSize = symbol.size
+        // Render waveform as template (always white in menu bar)
+        let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        guard let symbol = NSImage(systemSymbolName: "waveform", accessibilityDescription: "MyWhispers")?
+            .withSymbolConfiguration(config) else {
+            return NSImage(size: size)
+        }
+        symbol.isTemplate = true
+        let symbolSize = symbol.size
+
+        guard let dotColor else {
+            // No dot — return the template symbol directly
+            let img = NSImage(size: size, flipped: false) { rect in
+                let x = (rect.width - symbolSize.width) / 2
+                let y = (rect.height - symbolSize.height) / 2
+                symbol.draw(in: NSRect(x: x, y: y, width: symbolSize.width, height: symbolSize.height))
+                return true
+            }
+            img.isTemplate = true
+            return img
+        }
+
+        // Composite: template waveform + colored dot
+        // We must draw the waveform in white explicitly since the composite image
+        // cannot be a template (the dot needs its actual color).
+        let img = NSImage(size: size, flipped: false) { rect in
+            // Draw waveform in white (menu bar standard color)
+            NSColor.white.setFill()
             let x = (rect.width - symbolSize.width) / 2
             let y = (rect.height - symbolSize.height) / 2
-            symbol.draw(in: NSRect(x: x, y: y, width: symbolSize.width, height: symbolSize.height))
+            let symbolRect = NSRect(x: x, y: y, width: symbolSize.width, height: symbolSize.height)
+            symbol.draw(in: symbolRect)
 
-            // Draw dot overlay
-            if let color = dotColor {
-                let dotSize: CGFloat = 6
-                let dotRect = NSRect(
-                    x: rect.width - dotSize,
-                    y: 0,
-                    width: dotSize,
-                    height: dotSize
-                )
-                color.setFill()
-                NSBezierPath(ovalIn: dotRect).fill()
-            }
+            // Draw dot
+            let dotSize: CGFloat = 6
+            let dotRect = NSRect(
+                x: rect.width - dotSize,
+                y: 0,
+                width: dotSize,
+                height: dotSize
+            )
+            dotColor.setFill()
+            NSBezierPath(ovalIn: dotRect).fill()
 
             return true
         }
-        img.isTemplate = dotColor == nil
+        img.isTemplate = false
         return img
     }
 
