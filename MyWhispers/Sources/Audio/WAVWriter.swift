@@ -51,7 +51,7 @@ final class WAVWriter {
         let data = samples.withUnsafeBufferPointer { buffer in
             Data(bytes: buffer.baseAddress!, count: buffer.count * MemoryLayout<Float>.size)
         }
-        queue.sync {
+        queue.async { [self] in
             let newSize = UInt64(dataSize) + UInt64(data.count)
             guard newSize <= UInt64(UInt32.max) else { return }
             fileHandle.write(data)
@@ -61,6 +61,8 @@ final class WAVWriter {
 
     func finalize() throws {
         queue.sync {
+            defer { fileHandle.closeFile() }
+
             // Patch data size at offset 40
             fileHandle.seek(toFileOffset: 40)
             var size = dataSize
@@ -70,8 +72,6 @@ final class WAVWriter {
             fileHandle.seek(toFileOffset: 4)
             var riffSize = dataSize + 36
             fileHandle.write(Data(bytes: &riffSize, count: 4))
-
-            fileHandle.closeFile()
         }
     }
 
