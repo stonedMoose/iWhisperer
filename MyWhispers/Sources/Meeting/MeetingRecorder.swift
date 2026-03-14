@@ -9,6 +9,7 @@ final class MeetingRecorder {
     private var wavWriter: WAVWriter?
     private var recordingStartDate: Date?
     private var transcriptionProcess: Process?
+    private var currentOutputDir: URL?
 
     init(audioCapture: AudioCapture, settingsStore: SettingsStore) {
         self.audioCapture = audioCapture
@@ -31,12 +32,14 @@ final class MeetingRecorder {
         audioCapture.setOnSamples { samples in
             writer.writeSamples(samples)
         }
+        audioCapture.setAccumulateBuffer(false)
 
         try audioCapture.startRecording()
         Log.meeting.info("Meeting recording started: \(url.lastPathComponent)")
     }
 
     func stopRecording() -> URL? {
+        audioCapture.setAccumulateBuffer(true)
         _ = audioCapture.stopRecording()
 
         guard let writer = wavWriter else { return nil }
@@ -72,19 +75,24 @@ final class MeetingRecorder {
         let outputDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("mywhispers-meeting-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
+        currentOutputDir = outputDir
 
         let pythonPath = await installer.pythonPath
         let model = settingsStore.selectedModel.rawValue
         let language = settingsStore.selectedLanguage
         let langArg = language == .auto ? nil : language.rawValue
 
+        defer {
+            try? FileManager.default.removeItem(at: wavURL)
+            currentOutputDir = nil
+        }
+
         var whisperXArgs = [
             wavURL.path,
             "--model", model,
-            "--device", "cpu",
-            "--compute_type", "int8",
+            "--device", Self.isAppleSilicon ? "mps" : "cpu",
+            "--compute_type", Self.isAppleSilicon ? "float16" : "int8",
             "--diarize",
-            "--hf_token", hfToken,
             "--output_format", "json",
             "--output_dir", outputDir.path
         ]
@@ -109,10 +117,29 @@ final class MeetingRecorder {
 
         Log.meeting.info("Running WhisperX via Python: \(pythonPath)")
 
-        let (exitCode, stderr) = try await runWhisperX(
-            path: pythonPath,
-            arguments: [scriptURL.path] + whisperXArgs
-        )
+        let (exitCode, stderr): (Int32, String)
+        do {
+            (exitCode, stderr) = try await withThrowingTaskGroup(of: (Int32, String).self) { group in
+                group.addTask {
+                    try await self.runWhisperX(
+                        path: pythonPath,
+                        arguments: [scriptURL.path] + whisperXArgs,
+                        hfToken: hfToken
+                    )
+                }
+                group.addTask {
+                    try await Task.sleep(for: .seconds(3600))
+                    self.transcriptionProcess?.terminate()
+                    throw WhisperXError.transcriptionFailed("Timed out after 1 hour")
+                }
+                let result = try await group.next()!
+                group.cancelAll()
+                return result
+            }
+        } catch {
+            try? FileManager.default.removeItem(at: outputDir)
+            throw error
+        }
 
         guard exitCode == 0 else {
             try? FileManager.default.removeItem(at: outputDir)
@@ -131,9 +158,8 @@ final class MeetingRecorder {
         let jsonData = try Data(contentsOf: jsonFile)
         let markdown = try formatAsMarkdown(jsonData: jsonData, startDate: recordingStartDate ?? Date())
 
-        // Clean up temp dir and WAV
+        // Clean up temp dir
         try? FileManager.default.removeItem(at: outputDir)
-        try? FileManager.default.removeItem(at: wavURL)
 
         return markdown
     }
@@ -141,17 +167,25 @@ final class MeetingRecorder {
     func cancelTranscription() {
         transcriptionProcess?.terminate()
         transcriptionProcess = nil
+        if let dir = currentOutputDir {
+            try? FileManager.default.removeItem(at: dir)
+            currentOutputDir = nil
+        }
     }
 
     // MARK: - Private
 
-    private func runWhisperX(path: String, arguments: [String]) async throws -> (Int32, String) {
+    private func runWhisperX(path: String, arguments: [String], hfToken: String) async throws -> (Int32, String) {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<(Int32, String), Error>) in
             let process = Process()
             let errorPipe = Pipe()
             process.executableURL = URL(fileURLWithPath: path)
             process.arguments = arguments
             process.standardError = errorPipe
+            process.environment = ProcessInfo.processInfo.environment.merging(
+                ["HF_TOKEN": hfToken],
+                uniquingKeysWith: { _, new in new }
+            )
             self.transcriptionProcess = process
 
             process.terminationHandler = { [weak self] proc in
@@ -167,6 +201,16 @@ final class MeetingRecorder {
             } catch {
                 self.transcriptionProcess = nil
                 continuation.resume(throwing: error)
+            }
+        }
+    }
+
+    private static var isAppleSilicon: Bool {
+        var sysinfo = utsname()
+        uname(&sysinfo)
+        return withUnsafePointer(to: &sysinfo.machine) {
+            $0.withMemoryRebound(to: CChar.self, capacity: 1) {
+                String(validatingCString: $0) == "arm64"
             }
         }
     }
