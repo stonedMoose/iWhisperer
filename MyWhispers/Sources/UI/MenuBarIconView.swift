@@ -1,32 +1,35 @@
 import AppKit
 import SwiftUI
 
-final class StatusBarIconNSView: NSView {
-    var isMeetingRecording = false { didSet { updateDot() } }
-    var isRecording = false { didSet { updateDot() } }
-    var isProcessing = false { didSet { updateDot() } }
-    var isMeetingProcessing = false { didSet { updateDot() } }
+/// Renders the menu bar icon as a composited NSImage (waveform + optional recording dot).
+/// Used as the label of MenuBarExtra since NSViewRepresentable doesn't work in that context.
+@Observable
+@MainActor
+final class MenuBarIconState {
+    var isMeetingRecording = false { didSet { update() } }
+    var isRecording = false { didSet { update() } }
+    var isProcessing = false { didSet { update() } }
+    var isMeetingProcessing = false { didSet { update() } }
+
+    private(set) var image: NSImage
 
     private var dotVisible = true
     private var pulseTimer: Timer?
 
-    override var intrinsicContentSize: NSSize {
-        NSSize(width: 18, height: 18)
+    init() {
+        self.image = Self.renderIcon(dotColor: nil, dotVisible: true)
     }
 
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
+    private func update() {
+        if isMeetingRecording {
+            startPulse()
+        } else {
+            stopPulse()
+        }
+        rebuildImage()
+    }
 
-        let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-        guard let image = NSImage(systemSymbolName: "waveform", accessibilityDescription: "MyWhispers")?
-            .withSymbolConfiguration(config) else { return }
-
-        image.isTemplate = true
-        let imageSize = image.size
-        let x = (bounds.width - imageSize.width) / 2
-        let y = (bounds.height - imageSize.height) / 2
-        image.draw(in: NSRect(x: x, y: y, width: imageSize.width, height: imageSize.height))
-
+    private func rebuildImage() {
         let dotColor: NSColor?
         if isMeetingRecording {
             dotColor = dotVisible ? .red : .red.withAlphaComponent(0.3)
@@ -37,41 +40,51 @@ final class StatusBarIconNSView: NSView {
         } else {
             dotColor = nil
         }
-
-        if let color = dotColor {
-            let dotSize: CGFloat = 7
-            let dotRect = NSRect(
-                x: bounds.width - dotSize,
-                y: 0,
-                width: dotSize,
-                height: dotSize
-            )
-            color.setFill()
-            NSBezierPath(ovalIn: dotRect).fill()
-        }
+        image = Self.renderIcon(dotColor: dotColor, dotVisible: true)
     }
 
-    private func updateDot() {
-        if isMeetingRecording {
-            startPulse()
-        } else {
-            stopPulse()
+    private static func renderIcon(dotColor: NSColor?, dotVisible: Bool) -> NSImage {
+        let size = NSSize(width: 18, height: 18)
+        let img = NSImage(size: size, flipped: false) { rect in
+            // Draw waveform SF Symbol as template
+            let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+            guard let symbol = NSImage(systemSymbolName: "waveform", accessibilityDescription: "MyWhispers")?
+                .withSymbolConfiguration(config) else { return false }
+
+            let symbolSize = symbol.size
+            let x = (rect.width - symbolSize.width) / 2
+            let y = (rect.height - symbolSize.height) / 2
+            symbol.draw(in: NSRect(x: x, y: y, width: symbolSize.width, height: symbolSize.height))
+
+            // Draw dot overlay
+            if let color = dotColor {
+                let dotSize: CGFloat = 6
+                let dotRect = NSRect(
+                    x: rect.width - dotSize,
+                    y: 0,
+                    width: dotSize,
+                    height: dotSize
+                )
+                color.setFill()
+                NSBezierPath(ovalIn: dotRect).fill()
+            }
+
+            return true
         }
-        needsDisplay = true
+        img.isTemplate = dotColor == nil
+        return img
     }
 
     private func startPulse() {
         guard pulseTimer == nil else { return }
         dotVisible = true
         pulseTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            self.dotVisible.toggle()
-            self.needsDisplay = true
+            Task { @MainActor in
+                guard let self else { return }
+                self.dotVisible.toggle()
+                self.rebuildImage()
+            }
         }
-    }
-
-    deinit {
-        pulseTimer?.invalidate()
     }
 
     private func stopPulse() {
@@ -79,25 +92,27 @@ final class StatusBarIconNSView: NSView {
         pulseTimer = nil
         dotVisible = true
     }
+
+    deinit {
+        MainActor.assumeIsolated {
+            pulseTimer?.invalidate()
+        }
+    }
 }
 
-struct MenuBarIconView: NSViewRepresentable {
+struct MenuBarIconView: View {
     let isMeetingRecording: Bool
     let isRecording: Bool
     let isProcessing: Bool
     let isMeetingProcessing: Bool
 
-    func makeNSView(context: Context) -> StatusBarIconNSView {
-        let view = StatusBarIconNSView()
-        view.setContentHuggingPriority(.required, for: .horizontal)
-        view.setContentHuggingPriority(.required, for: .vertical)
-        return view
-    }
+    @State private var iconState = MenuBarIconState()
 
-    func updateNSView(_ nsView: StatusBarIconNSView, context: Context) {
-        nsView.isMeetingRecording = isMeetingRecording
-        nsView.isRecording = isRecording
-        nsView.isProcessing = isProcessing
-        nsView.isMeetingProcessing = isMeetingProcessing
+    var body: some View {
+        Image(nsImage: iconState.image)
+            .onChange(of: isMeetingRecording) { _, val in iconState.isMeetingRecording = val }
+            .onChange(of: isRecording) { _, val in iconState.isRecording = val }
+            .onChange(of: isProcessing) { _, val in iconState.isProcessing = val }
+            .onChange(of: isMeetingProcessing) { _, val in iconState.isMeetingProcessing = val }
     }
 }
