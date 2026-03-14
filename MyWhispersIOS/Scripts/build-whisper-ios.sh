@@ -12,7 +12,7 @@ echo "Source:  $WHISPER_SRC"
 echo "Output:  $OUTPUT_DIR"
 echo "Build:   $BUILD_DIR"
 
-rm -rf "$BUILD_DIR"
+rm -rf "$BUILD_DIR" "$OUTPUT_DIR"
 mkdir -p "$BUILD_DIR" "$OUTPUT_DIR/lib" "$OUTPUT_DIR/include"
 
 cd "$BUILD_DIR"
@@ -26,6 +26,7 @@ cmake "$WHISPER_SRC" \
   -DGGML_METAL_EMBED_LIBRARY=ON \
   -DGGML_NATIVE=OFF \
   -DGGML_OPENMP=OFF \
+  -DGGML_BLAS=OFF \
   -DWHISPER_COREML=OFF \
   -DBUILD_SHARED_LIBS=OFF \
   -DWHISPER_BUILD_TESTS=OFF \
