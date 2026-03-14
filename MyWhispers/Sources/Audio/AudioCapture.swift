@@ -6,6 +6,7 @@ final class AudioCapture: @unchecked Sendable {
     private var audioBuffer: [Float] = []
     private let bufferLock = NSLock()
     private var onSamples: (([Float]) -> Void)?
+    private var accumulateBuffer = true
 
     /// Request microphone permission. Returns true if granted.
     static func requestPermission() async -> Bool {
@@ -19,6 +20,13 @@ final class AudioCapture: @unchecked Sendable {
     func setOnSamples(_ callback: (([Float]) -> Void)?) {
         bufferLock.lock()
         onSamples = callback
+        bufferLock.unlock()
+    }
+
+    func setAccumulateBuffer(_ enabled: Bool) {
+        bufferLock.lock()
+        accumulateBuffer = enabled
+        if !enabled { audioBuffer.removeAll() }
         bufferLock.unlock()
     }
 
@@ -57,9 +65,15 @@ final class AudioCapture: @unchecked Sendable {
             ) else { return }
 
             var error: NSError?
+            var provided = false
             converter.convert(to: convertedBuffer, error: &error) { _, outStatus in
-                outStatus.pointee = .haveData
-                return buffer
+                if !provided {
+                    provided = true
+                    outStatus.pointee = .haveData
+                    return buffer
+                }
+                outStatus.pointee = .noDataNow
+                return nil
             }
 
             if error == nil, let channelData = convertedBuffer.floatChannelData?[0] {
@@ -68,7 +82,9 @@ final class AudioCapture: @unchecked Sendable {
                     count: Int(convertedBuffer.frameLength)
                 ))
                 self.bufferLock.lock()
-                self.audioBuffer.append(contentsOf: samples)
+                if self.accumulateBuffer {
+                    self.audioBuffer.append(contentsOf: samples)
+                }
                 let callback = self.onSamples
                 self.bufferLock.unlock()
                 callback?(samples)
@@ -97,16 +113,21 @@ final class AudioCapture: @unchecked Sendable {
     /// Used by streaming mode to get a sliding window of audio.
     func getWindow(lengthMs: Int, keepMs: Int) -> [Float] {
         bufferLock.lock()
-        let allSamples = audioBuffer
-        bufferLock.unlock()
+        defer { bufferLock.unlock() }
 
-        let lengthSamples = lengthMs * 16  // 16kHz = 16 samples per ms
-        let maxSamples = min(allSamples.count, lengthSamples)
+        let lengthSamples = lengthMs * 16
+        let keepSamples = keepMs * 16
 
+        let maxSamples = min(audioBuffer.count, lengthSamples)
         if maxSamples <= 0 { return [] }
 
-        // Take the last `maxSamples` from the buffer
-        return Array(allSamples.suffix(maxSamples))
+        let window = Array(audioBuffer.suffix(maxSamples))
+
+        // Trim buffer to retain only keepMs overlap for next window
+        let retainCount = min(audioBuffer.count, keepSamples)
+        audioBuffer = Array(audioBuffer.suffix(retainCount))
+
+        return window
     }
 
     /// Return all samples captured so far without clearing the buffer.

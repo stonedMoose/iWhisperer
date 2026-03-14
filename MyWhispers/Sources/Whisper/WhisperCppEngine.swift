@@ -45,7 +45,8 @@ actor WhisperCppEngine {
         guard let ctx else { return "" }
 
         let maxThreads = max(1, min(8, ProcessInfo.processInfo.processorCount - 2))
-        var params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY)
+        var params = whisper_full_default_params(WHISPER_SAMPLING_BEAM_SEARCH)
+        params.beam_search.beam_size = 5
         params.print_realtime = false
         params.print_progress = false
         params.print_special = false
@@ -54,6 +55,7 @@ actor WhisperCppEngine {
         params.single_segment = false
         params.no_context = true
         params.n_threads = Int32(maxThreads)
+        params.no_speech_thold = 0.6
 
         let lang = language == "auto" ? nil : language
         let result: Int32 = lang.withOptionalCString { langPtr in
@@ -87,15 +89,21 @@ actor WhisperCppEngine {
         params.no_context = promptTokens.isEmpty
         params.n_threads = Int32(maxThreads)
         params.no_timestamps = true
+        params.no_speech_thold = 0.6
 
         let lang = language == "auto" ? nil : language
+
+        let maxPromptTokens = Int(whisper_n_text_ctx(ctx)) / 2
+        let cappedTokens = promptTokens.count > maxPromptTokens
+            ? Array(promptTokens.suffix(maxPromptTokens))
+            : promptTokens
 
         let result: Int32 = lang.withOptionalCString { langPtr in
             params.language = langPtr
 
             // Feed prompt tokens for cross-chunk coherence
-            return promptTokens.withUnsafeBufferPointer { promptPtr in
-                if !promptTokens.isEmpty {
+            return cappedTokens.withUnsafeBufferPointer { promptPtr in
+                if !cappedTokens.isEmpty {
                     params.prompt_tokens = promptPtr.baseAddress
                     params.prompt_n_tokens = Int32(promptPtr.count)
                 }
