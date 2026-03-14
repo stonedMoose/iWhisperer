@@ -106,6 +106,11 @@ struct MyWhispersApp: App {
 
             Divider()
 
+            Button("Streaming \(settingsStore.streamingMode ? "✓" : "")") {
+                settingsStore.streamingMode.toggle()
+            }
+            .disabled(appState.isRecording || appState.isProcessing)
+
             Button("Lancer au démarrage \(settingsStore.launchAtLogin ? "✓" : "")") {
                 settingsStore.launchAtLogin.toggle()
                 do {
