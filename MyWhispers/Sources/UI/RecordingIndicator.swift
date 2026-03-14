@@ -74,7 +74,7 @@ final class RecordingIndicator {
         guard AXUIElementCopyAttributeValue(appElement, kAXFocusedUIElementAttribute as CFString, &focusedValue) == .success,
               let focused = focusedValue else { return nil }
 
-        guard let focusedElement = focused as? AXUIElement else { return nil }
+        let focusedElement = focused as! AXUIElement
 
         // Get the selected text range (cursor position)
         var rangeValue: CFTypeRef?
@@ -88,8 +88,7 @@ final class RecordingIndicator {
 
         // Extract CGRect from the AXValue
         var rect = CGRect.zero
-        guard let boundsAXValue = bounds as? AXValue,
-              AXValueGetValue(boundsAXValue, .cgRect, &rect) else { return nil }
+        guard AXValueGetValue(bounds as! AXValue, .cgRect, &rect) else { return nil }
 
         // AX coordinates: origin at top-left of primary display
         // AppKit coordinates: origin at bottom-left of primary display

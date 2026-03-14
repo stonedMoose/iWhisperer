@@ -127,7 +127,7 @@ final class MeetingRecorder {
                         hfToken: hfToken
                     )
                 }
-                group.addTask {
+                group.addTask { @MainActor in
                     try await Task.sleep(for: .seconds(3600))
                     self.transcriptionProcess?.terminate()
                     throw WhisperXError.transcriptionFailed("Timed out after 1 hour")
