@@ -3,6 +3,8 @@ import Foundation
 import OSLog
 
 actor WhisperCppEngine {
+    static let shared = WhisperCppEngine()
+
     private var ctx: OpaquePointer?
     private var currentModelPath: String?
 
@@ -121,6 +123,52 @@ actor WhisperCppEngine {
         let text = collectSegmentText()
         let tokens = collectTokenIds()
         return (text, tokens)
+    }
+
+    /// Transcribe audio and return segments with timestamps for diarization merging.
+    func transcribeWithSegments(samples: [Float], language: String?) -> [(start: Double, end: Double, text: String)] {
+        guard let ctx else { return [] }
+
+        let maxThreads = max(1, min(8, ProcessInfo.processInfo.processorCount - 2))
+        var params = whisper_full_default_params(WHISPER_SAMPLING_BEAM_SEARCH)
+        params.beam_search.beam_size = 5
+        params.print_realtime = false
+        params.print_progress = false
+        params.print_special = false
+        params.print_timestamps = true
+        params.translate = false
+        params.single_segment = false
+        params.no_context = true
+        params.n_threads = Int32(maxThreads)
+        params.no_speech_thold = 0.6
+
+        let result: Int32 = language.withOptionalCString { langPtr in
+            params.language = langPtr
+            return samples.withUnsafeBufferPointer { samplesPtr in
+                whisper_full(ctx, params, samplesPtr.baseAddress, Int32(samplesPtr.count))
+            }
+        }
+
+        guard result == 0 else {
+            Log.whisper.error("whisper_full (segments) failed with code \(result)")
+            return []
+        }
+
+        var segments: [(start: Double, end: Double, text: String)] = []
+        let nSegments = whisper_full_n_segments(ctx)
+        for i in 0..<nSegments {
+            let t0 = whisper_full_get_segment_t0(ctx, i)  // in centiseconds (100ths of second)
+            let t1 = whisper_full_get_segment_t1(ctx, i)
+            guard let cStr = whisper_full_get_segment_text(ctx, i) else { continue }
+            let text = cleanText(String(cString: cStr))
+            guard !text.isEmpty else { continue }
+            segments.append((
+                start: Double(t0) / 100.0,
+                end: Double(t1) / 100.0,
+                text: text
+            ))
+        }
+        return segments
     }
 
     // MARK: - Private

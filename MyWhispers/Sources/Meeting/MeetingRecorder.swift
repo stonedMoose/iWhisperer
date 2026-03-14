@@ -164,6 +164,94 @@ final class MeetingRecorder {
         return markdown
     }
 
+    /// Transcribe using whisper.cpp + sherpa-onnx native diarization.
+    func transcribeBuiltIn(wavURL: URL) async throws -> String {
+        defer {
+            try? FileManager.default.removeItem(at: wavURL)
+        }
+
+        // 1. Ensure diarization models are downloaded
+        let segmentationPath = try await ModelManager.shared.ensureDiarizationModel(.segmentation)
+        let embeddingPath = try await ModelManager.shared.ensureDiarizationModel(.embedding)
+
+        // 2. Transcribe with whisper.cpp
+        let model = settingsStore.selectedModel
+        let language = settingsStore.selectedLanguage
+        let modelPath = try await ModelManager.shared.ensureModel(model)
+
+        let engine = WhisperCppEngine.shared
+        try await engine.loadModel(path: modelPath)
+
+        let audioData = try Data(contentsOf: wavURL)
+        guard audioData.count > 44 else {
+            throw WhisperXError.transcriptionFailed("WAV file too small")
+        }
+        let sampleData = audioData.dropFirst(44)
+        let samples: [Float] = sampleData.withUnsafeBytes { buffer in
+            Array(buffer.bindMemory(to: Float.self))
+        }
+
+        let transcriptionSegments = await engine.transcribeWithSegments(
+            samples: samples,
+            language: language == .auto ? nil : language.rawValue
+        )
+
+        // 3. Run sherpa-onnx diarization
+        let speakerSegments = try await SherpaOnnxDiarizer.shared.diarize(
+            wavPath: wavURL.path,
+            segmentationModelPath: segmentationPath,
+            embeddingModelPath: embeddingPath
+        )
+
+        // 4. Merge transcription with speaker labels
+        let merged = TranscriptMerger.merge(
+            transcriptionSegments: transcriptionSegments,
+            speakerSegments: speakerSegments
+        )
+
+        // 5. Format as Markdown
+        return formatMergedAsMarkdown(segments: merged, startDate: recordingStartDate ?? Date())
+    }
+
+    private func formatMergedAsMarkdown(segments: [TranscriptMerger.MergedSegment], startDate: Date) -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
+        let dateStr = dateFormatter.string(from: startDate)
+
+        let duration = elapsedTime
+        let durationStr = formatDuration(duration)
+
+        var md = "# Meeting Transcript\n"
+        md += "**Date:** \(dateStr)\n"
+        md += "**Duration:** \(durationStr)\n\n"
+        md += "---\n\n"
+
+        var currentSpeaker: String?
+        var currentText = ""
+        var currentStart: Double = 0
+
+        for segment in segments {
+            if segment.speaker == currentSpeaker {
+                currentText += " " + segment.text.trimmingCharacters(in: .whitespaces)
+            } else {
+                if let prev = currentSpeaker {
+                    md += "**\(prev)** (\(formatTimestamp(currentStart)))\n"
+                    md += "\(currentText.trimmingCharacters(in: .whitespaces))\n\n"
+                }
+                currentSpeaker = segment.speaker
+                currentText = segment.text.trimmingCharacters(in: .whitespaces)
+                currentStart = segment.start
+            }
+        }
+
+        if let prev = currentSpeaker {
+            md += "**\(prev)** (\(formatTimestamp(currentStart)))\n"
+            md += "\(currentText.trimmingCharacters(in: .whitespaces))\n"
+        }
+
+        return md
+    }
+
     func cancelTranscription() {
         transcriptionProcess?.terminate()
         transcriptionProcess = nil
