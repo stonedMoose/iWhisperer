@@ -21,15 +21,6 @@ struct SettingsView: View {
                     Label("General", systemImage: "gearshape")
                         .font(.headline)
 
-                    Picker("Model", selection: $settings.selectedModel) {
-                        ForEach(WhisperModel.allCases) { model in
-                            Text(model.displayName).tag(model)
-                        }
-                    }
-                    .onChange(of: settings.selectedModel) { _, _ in
-                        NotificationCenter.default.post(name: .modelChanged, object: nil)
-                    }
-
                     Toggle("Launch at login", isOn: $settings.launchAtLogin)
                         .onChange(of: settings.launchAtLogin) { _, newValue in
                             do {
@@ -48,24 +39,59 @@ struct SettingsView: View {
                 Divider()
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Label("HuggingFace", systemImage: "key")
+                    Label("Model", systemImage: "cpu")
                         .font(.headline)
 
-                    SecureField("Token", text: $settings.hfToken)
-                        .textFieldStyle(.roundedBorder)
-
-                    Link("Get a token at huggingface.co",
-                         destination: URL(string: "https://huggingface.co/settings/tokens")!)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Text("Required for speaker identification.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Picker("", selection: $settings.selectedModel) {
+                        ForEach(WhisperModel.allCases) { model in
+                            Text(model.displayName).tag(model)
+                        }
+                    }
+                    .labelsHidden()
+                    .onChange(of: settings.selectedModel) { _, _ in
+                        NotificationCenter.default.post(name: .modelChanged, object: nil)
+                    }
                 }
 
                 Divider()
 
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Diarization", systemImage: "person.wave.2")
+                        .font(.headline)
+
+                    Picker("", selection: $settings.diarizationEngine) {
+                        ForEach(DiarizationEngine.allCases) { engine in
+                            Text(engine.displayName).tag(engine)
+                        }
+                    }
+                    .labelsHidden()
+
+                    if settings.diarizationEngine == .whisperX {
+                        SecureField("HuggingFace Token", text: $settings.hfToken)
+                            .textFieldStyle(.roundedBorder)
+
+                        Link("Get a token at huggingface.co",
+                             destination: URL(string: "https://huggingface.co/settings/tokens")!)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Text(settings.diarizationEngine == .builtIn
+                        ? "No account needed. Models downloaded on first use (~95 MB)."
+                        : "Requires a HuggingFace token for pyannote speaker diarization.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Divider()
+
+            // Column 2: Languages
+            VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 8) {
                     Label("Preferred Languages", systemImage: "globe")
                         .font(.headline)
@@ -92,17 +118,17 @@ struct SettingsView: View {
 
             Divider()
 
-            // Column 2: Insert at Caret
+            // Column 3: Insert at Caret
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 8) {
                     Label("Insert at Caret", systemImage: "keyboard")
                         .font(.headline)
 
-                    KeyboardShortcuts.Recorder("Shortcut:", name: .holdToRecord)
-
                     Text("Hold shortcut to record, release to transcribe and insert text at cursor.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    KeyboardShortcuts.Recorder(for: .holdToRecord)
                 }
 
                 Divider()
@@ -125,17 +151,17 @@ struct SettingsView: View {
 
             Divider()
 
-            // Column 3: Meeting
+            // Column 4: Meeting
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 8) {
                     Label("Meeting", systemImage: "person.3")
                         .font(.headline)
 
-                    KeyboardShortcuts.Recorder("Shortcut:", name: .meetingRecord)
-
                     Text("Press to start recording, press again to stop and transcribe with speaker labels.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    KeyboardShortcuts.Recorder(for: .meetingRecord)
                 }
 
                 Divider()
@@ -172,7 +198,7 @@ struct SettingsView: View {
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(width: 750, height: 480)
+        .frame(width: 920, height: 480)
     }
 }
 
