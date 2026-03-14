@@ -25,6 +25,9 @@ final class SettingsStore {
     @ObservationIgnored
     @AppStorage("transcriptDirectory") private var _transcriptDirectory: String = ""
 
+    @ObservationIgnored
+    @AppStorage("diarizationEngine") private var _diarizationEngine: DiarizationEngine = .builtIn
+
     var selectedModel: WhisperModel {
         get {
             access(keyPath: \.selectedModel)
@@ -129,6 +132,18 @@ final class SettingsStore {
         set {
             withMutation(keyPath: \.transcriptDirectory) {
                 _transcriptDirectory = newValue.path
+            }
+        }
+    }
+
+    var diarizationEngine: DiarizationEngine {
+        get {
+            access(keyPath: \.diarizationEngine)
+            return _diarizationEngine
+        }
+        set {
+            withMutation(keyPath: \.diarizationEngine) {
+                _diarizationEngine = newValue
             }
         }
     }

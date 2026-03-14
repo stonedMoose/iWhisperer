@@ -63,3 +63,17 @@ enum WhisperLanguage: String, CaseIterable, Identifiable, Codable {
         }
     }
 }
+
+enum DiarizationEngine: String, CaseIterable, Identifiable, Codable {
+    case builtIn = "builtIn"
+    case whisperX = "whisperX"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .builtIn: "Built-in (TitaNet)"
+        case .whisperX: "WhisperX (pyannote)"
+        }
+    }
+}
