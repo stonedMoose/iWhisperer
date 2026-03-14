@@ -281,7 +281,7 @@ final class AppState {
             samples: samples,
             language: language == .auto ? "auto" : language.rawValue
         )
-        Log.whisper.info("Transcription result: \(text)")
+        Log.whisper.info("Transcription result: \(text, privacy: .private)")
         if !text.isEmpty {
             TextInjector.typeText(text)
         }
@@ -354,7 +354,7 @@ final class AppState {
                 let prefix = streamingTypedWordCount == 0 ? "" : " "
                 let newText = prefix + newWords.joined(separator: " ")
                 if !newText.isEmpty {
-                    Log.whisper.info("Streaming text: \(newText)")
+                    Log.whisper.info("Streaming text: \(newText, privacy: .private)")
                     TextInjector.typeText(newText)
                     streamingTypedWordCount = stableCount
                 }
@@ -367,6 +367,7 @@ final class AppState {
 
     private func stopStreamingRecording() async {
         streamingLoopTask?.cancel()
+        await streamingLoopTask?.value
         streamingLoopTask = nil
 
         let samples = audioCapture.stopRecording()
@@ -392,11 +393,11 @@ final class AppState {
             let prefix = streamingTypedWordCount == 0 ? "" : " "
             let remainingText = prefix + remaining.joined(separator: " ")
             if !remainingText.isEmpty {
-                Log.whisper.info("Streaming final: \(remainingText)")
+                Log.whisper.info("Streaming final: \(remainingText, privacy: .private)")
                 TextInjector.typeText(remainingText)
             }
         } else if streamingTypedWordCount == 0 && !finalText.isEmpty {
-            Log.whisper.info("Streaming fallback: \(finalText)")
+            Log.whisper.info("Streaming fallback: \(finalText, privacy: .private)")
             TextInjector.typeText(finalText)
         }
 
