@@ -32,7 +32,7 @@ actor WhisperXInstaller {
 
         let pip = envDir.appendingPathComponent("bin/pip").path
         onStatus("Installing WhisperX (this may take a few minutes)...")
-        try await runProcess(pip, arguments: ["install", "whisperx"])
+        try await runProcess(pip, arguments: ["install", "whisperx==3.1.6", "--no-cache-dir"])
 
         guard isInstalled else {
             throw WhisperXError.installFailed("whisperx binary not found after installation")
