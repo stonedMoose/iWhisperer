@@ -21,9 +21,16 @@ struct TextInjector {
 
     /// Type text at the current cursor position using CGEvent keyboard simulation.
     static func typeText(_ text: String) {
+        let maxLength = 5000
+        let truncated = String(text.prefix(maxLength))
+        // Strip control characters (keep printable, space, newline, tab)
+        let sanitized = truncated.filter { char in
+            char == "\n" || char == "\t" || (char >= " " && char != "\u{7F}")
+        }
+
         let source = CGEventSource(stateID: .hidSystemState)
 
-        for character in text {
+        for character in sanitized {
             let utf16 = Array(String(character).utf16)
             let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true)
             let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false)
@@ -34,7 +41,6 @@ struct TextInjector {
             keyDown?.post(tap: .cghidEventTap)
             keyUp?.post(tap: .cghidEventTap)
 
-            // Small delay to prevent overwhelming target app's event queue
             usleep(1000)
         }
     }
