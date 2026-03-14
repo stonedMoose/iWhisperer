@@ -56,29 +56,10 @@ struct SettingsView: View {
                 Divider()
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Label("Diarization", systemImage: "person.wave.2")
+                    Label("Speaker Identification", systemImage: "person.wave.2")
                         .font(.headline)
 
-                    Picker("", selection: $settings.diarizationEngine) {
-                        ForEach(DiarizationEngine.allCases) { engine in
-                            Text(engine.displayName).tag(engine)
-                        }
-                    }
-                    .labelsHidden()
-
-                    if settings.diarizationEngine == .whisperX {
-                        SecureField("HuggingFace Token", text: $settings.hfToken)
-                            .textFieldStyle(.roundedBorder)
-
-                        Link("Get a token at huggingface.co",
-                             destination: URL(string: "https://huggingface.co/settings/tokens")!)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Text(settings.diarizationEngine == .builtIn
-                        ? "No account needed. Models downloaded on first use (~95 MB)."
-                        : "Requires a HuggingFace token for pyannote speaker diarization.")
+                    Text("No account needed. Models downloaded on first use (~95 MB).")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

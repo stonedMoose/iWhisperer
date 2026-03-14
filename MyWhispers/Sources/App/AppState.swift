@@ -24,7 +24,6 @@ final class AppState {
     var isMeetingProcessing = false
     var meetingStatusMessage = ""
     var meetingElapsedTime: TimeInterval = 0
-    var isWhisperXInstalled = false
 
     private let whisperEngine = WhisperCppEngine()
     private let modelManager = ModelManager.shared
@@ -52,7 +51,6 @@ final class AppState {
         setupNotificationDelegate()
         Task {
             await checkPermissionsAndSetup()
-            isWhisperXInstalled = await WhisperXInstaller.shared.isInstalled
         }
     }
 
@@ -469,30 +467,11 @@ final class AppState {
         isMeetingProcessing = true
 
         do {
-            let markdown: String
-            switch settingsStore.diarizationEngine {
-            case .builtIn:
-                meetingStatusMessage = "Preparing models..."
-                // Ensure models are downloaded before transcription (shows progress context)
-                _ = try await ModelManager.shared.ensureDiarizationModel(.segmentation)
-                _ = try await ModelManager.shared.ensureDiarizationModel(.embedding)
-                meetingStatusMessage = "Transcribing & identifying speakers..."
-                markdown = try await recorder.transcribeBuiltIn(wavURL: wavURL)
-            case .whisperX:
-                meetingStatusMessage = "Checking WhisperX..."
-                let installer = WhisperXInstaller.shared
-                if await !installer.isInstalled {
-                    meetingStatusMessage = "Installing WhisperX..."
-                    try await installer.install { [weak self] status in
-                        Task { @MainActor in
-                            self?.meetingStatusMessage = status
-                        }
-                    }
-                    isWhisperXInstalled = true
-                }
-                meetingStatusMessage = "Transcribing meeting..."
-                markdown = try await recorder.transcribe(wavURL: wavURL)
-            }
+            meetingStatusMessage = "Preparing models..."
+            _ = try await ModelManager.shared.ensureDiarizationModel(.segmentation)
+            _ = try await ModelManager.shared.ensureDiarizationModel(.embedding)
+            meetingStatusMessage = "Transcribing & identifying speakers..."
+            let markdown = try await recorder.transcribe(wavURL: wavURL)
             isMeetingProcessing = false
             meetingStatusMessage = ""
             saveTranscript(markdown: markdown)
@@ -504,25 +483,7 @@ final class AppState {
         }
     }
 
-    func installWhisperX() async {
-        isMeetingProcessing = true
-        meetingStatusMessage = "Installing WhisperX..."
-        do {
-            try await WhisperXInstaller.shared.install { [weak self] status in
-                Task { @MainActor in
-                    self?.meetingStatusMessage = status
-                }
-            }
-            isWhisperXInstalled = true
-        } catch {
-            showPermissionError(error.localizedDescription)
-        }
-        isMeetingProcessing = false
-        meetingStatusMessage = ""
-    }
-
     func cancelMeetingTranscription() {
-        meetingRecorder?.cancelTranscription()
         isMeetingProcessing = false
         meetingStatusMessage = ""
     }

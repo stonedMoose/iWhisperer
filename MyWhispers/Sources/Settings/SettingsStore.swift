@@ -1,4 +1,3 @@
-import Security
 import SwiftUI
 
 @Observable
@@ -25,8 +24,6 @@ final class SettingsStore {
     @ObservationIgnored
     @AppStorage("transcriptDirectory") private var _transcriptDirectory: String = ""
 
-    @ObservationIgnored
-    @AppStorage("diarizationEngine") private var _diarizationEngine: DiarizationEngine = .builtIn
 
     var selectedModel: WhisperModel {
         get {
@@ -105,22 +102,6 @@ final class SettingsStore {
         }
     }
 
-    var hfToken: String {
-        get {
-            access(keyPath: \.hfToken)
-            return Self.readKeychain(service: "MyWhispers", account: "hfToken") ?? ""
-        }
-        set {
-            withMutation(keyPath: \.hfToken) {
-                if newValue.isEmpty {
-                    Self.deleteKeychain(service: "MyWhispers", account: "hfToken")
-                } else {
-                    Self.writeKeychain(service: "MyWhispers", account: "hfToken", value: newValue)
-                }
-            }
-        }
-    }
-
     var transcriptDirectory: URL {
         get {
             access(keyPath: \.transcriptDirectory)
@@ -136,51 +117,4 @@ final class SettingsStore {
         }
     }
 
-    var diarizationEngine: DiarizationEngine {
-        get {
-            access(keyPath: \.diarizationEngine)
-            return _diarizationEngine
-        }
-        set {
-            withMutation(keyPath: \.diarizationEngine) {
-                _diarizationEngine = newValue
-            }
-        }
-    }
-
-    private static func readKeychain(service: String, account: String) -> String? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var result: AnyObject?
-        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
-              let data = result as? Data,
-              let string = String(data: data, encoding: .utf8) else { return nil }
-        return string
-    }
-
-    private static func writeKeychain(service: String, account: String, value: String) {
-        deleteKeychain(service: service, account: account)
-        guard let data = value.data(using: .utf8) else { return }
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecValueData as String: data,
-        ]
-        SecItemAdd(query as CFDictionary, nil)
-    }
-
-    private static func deleteKeychain(service: String, account: String) {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-        ]
-        SecItemDelete(query as CFDictionary)
-    }
 }

@@ -64,16 +64,3 @@ enum WhisperLanguage: String, CaseIterable, Identifiable, Codable {
     }
 }
 
-enum DiarizationEngine: String, CaseIterable, Identifiable, Codable {
-    case builtIn = "builtIn"
-    case whisperX = "whisperX"
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .builtIn: "Built-in (no account needed)"
-        case .whisperX: "WhisperX (pyannote)"
-        }
-    }
-}

@@ -87,13 +87,6 @@ struct MyWhispersApp: App {
                     Button("Cancel Transcription") {
                         appState.cancelMeetingTranscription()
                     }
-                } else if !appState.isWhisperXInstalled {
-                    Button("Install WhisperX...") {
-                        Task {
-                            await appState.installWhisperX()
-                        }
-                    }
-                    .disabled(appState.isMeetingProcessing)
                 } else {
                     Button("Start Meeting Recording") {
                         Task {
