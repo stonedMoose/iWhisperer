@@ -19,7 +19,7 @@ targets:
         SWIFT_INCLUDE_PATHS: $(PROJECT_DIR)/Vendor/CWhisper
         HEADER_SEARCH_PATHS: $(PROJECT_DIR)/Vendor/whisper-built/include
         LIBRARY_SEARCH_PATHS: $(PROJECT_DIR)/Vendor/whisper-built/lib
-        OTHER_LDFLAGS: ["-lwhisper", "-lggml", "-lggml-base", "-lggml-cpu", "-lggml-metal", "-lc++"]
+        OTHER_LDFLAGS: ["-lwhisper", "-lggml", "-lggml-base", "-lggml-cpu", "-lggml-metal", "-lc++", "-framework", "Accelerate", "-framework", "Metal", "-framework", "MetalKit"]
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "MyWhispers needs microphone access to record your voice for transcription."
         INFOPLIST_KEY_UIBackgroundModes: "audio"
         PRODUCT_BUNDLE_IDENTIFIER: com.julienlhermite.MyWhispersIOS
