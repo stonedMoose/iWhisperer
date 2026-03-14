@@ -174,12 +174,52 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                Divider()
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("AI Refinement", systemImage: "sparkles")
+                        .font(.headline)
+
+                    Toggle("Refine transcript with AI", isOn: $settings.refinementEnabled)
+
+                    if settings.refinementEnabled {
+                        Picker("Provider", selection: $settings.refinementProvider) {
+                            ForEach(LLMProvider.allCases) { provider in
+                                Text(provider.displayName).tag(provider)
+                            }
+                        }
+                        .onChange(of: settings.refinementProvider) { _, newValue in
+                            settings.refinementModel = newValue.defaultModel
+                        }
+
+                        SecureField("API Key", text: $settings.refinementAPIKey)
+                            .textFieldStyle(.roundedBorder)
+
+                        TextField("Model", text: $settings.refinementModel)
+                            .textFieldStyle(.roundedBorder)
+
+                        Text("Prompt:")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        TextEditor(text: $settings.refinementPrompt)
+                            .font(.caption)
+                            .frame(height: 80)
+                            .border(Color.secondary.opacity(0.3))
+
+                        Button("Reset prompt to default") {
+                            settings.refinementPrompt = SettingsStore.defaultRefinementPrompt
+                        }
+                        .font(.caption)
+                    }
+                }
+
                 Spacer()
             }
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(width: 920, height: 480)
+        .frame(width: 920, height: 680)
     }
 }
 
