@@ -14,7 +14,7 @@ struct MyWhispersApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("MyWhispers", systemImage: "waveform") {
+        MenuBarExtra {
             // Status
             if !appState.micPermissionGranted {
                 Label("Microphone not authorized", systemImage: "exclamationmark.triangle")
@@ -133,6 +133,13 @@ struct MyWhispersApp: App {
                 NSApplication.shared.terminate(nil)
             }
             .keyboardShortcut("q", modifiers: .command)
+        } label: {
+            MenuBarIconView(
+                isMeetingRecording: appState.isMeetingRecording,
+                isRecording: appState.isRecording,
+                isProcessing: appState.isProcessing,
+                isMeetingProcessing: appState.isMeetingProcessing
+            )
         }
         .menuBarExtraStyle(.menu)
 
