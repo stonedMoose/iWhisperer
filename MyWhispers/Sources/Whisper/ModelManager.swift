@@ -46,6 +46,73 @@ actor ModelManager {
         FileManager.default.fileExists(atPath: modelPath(for: model))
     }
 
+    // MARK: - Diarization models
+
+    enum DiarizationModel: String {
+        case titanet = "titanet-large"
+        case sileroVAD = "silero-vad-v6"
+
+        var filename: String {
+            switch self {
+            case .titanet: "3dspeaker_speech_eres2net_large_sv_zh-cn_3dspeaker_16k.onnx"
+            case .sileroVAD: "silero_vad.onnx"
+            }
+        }
+
+        var downloadURL: URL {
+            switch self {
+            case .titanet:
+                URL(string: "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/3dspeaker_speech_eres2net_large_sv_zh-cn_3dspeaker_16k.onnx")!
+            case .sileroVAD:
+                URL(string: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx")!
+            }
+        }
+
+        var displayName: String {
+            switch self {
+            case .titanet: "Speaker embedding model (~90 MB)"
+            case .sileroVAD: "Voice activity detection model (~2 MB)"
+            }
+        }
+    }
+
+    func ensureDiarizationModel(_ model: DiarizationModel, progressCallback: (@Sendable (Double) -> Void)? = nil) async throws -> String {
+        let path = diarizationModelPath(for: model)
+
+        if FileManager.default.fileExists(atPath: path) {
+            Log.whisper.info("Diarization model already cached: \(path)")
+            progressCallback?(1.0)
+            return path
+        }
+
+        let dir = modelsDirectory
+        try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+
+        let url = model.downloadURL
+        Log.whisper.info("Downloading diarization model from \(url.absoluteString)")
+
+        let delegate = DownloadDelegate(progressCallback: progressCallback)
+        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+        let (tempURL, response) = try await session.download(from: url, delegate: delegate)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw ModelManagerError.downloadFailed(model.rawValue)
+        }
+
+        try FileManager.default.moveItem(atPath: tempURL.path, toPath: path)
+        Log.whisper.info("Diarization model downloaded to \(path)")
+        return path
+    }
+
+    func diarizationModelPath(for model: DiarizationModel) -> String {
+        modelsDirectory + "/\(model.filename)"
+    }
+
+    func isDiarizationModelDownloaded(_ model: DiarizationModel) -> Bool {
+        FileManager.default.fileExists(atPath: diarizationModelPath(for: model))
+    }
+
     private var modelsDirectory: String {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         return appSupport.appendingPathComponent("MyWhispers/models").path
