@@ -471,7 +471,23 @@ final class AppState {
             _ = try await ModelManager.shared.ensureDiarizationModel(.segmentation)
             _ = try await ModelManager.shared.ensureDiarizationModel(.embedding)
             meetingStatusMessage = "Transcribing & identifying speakers..."
-            let markdown = try await recorder.transcribe(wavURL: wavURL)
+            var markdown = try await recorder.transcribe(wavURL: wavURL)
+
+            if settingsStore.refinementEnabled {
+                meetingStatusMessage = "Refining transcript..."
+                do {
+                    markdown = try await TranscriptRefiner.shared.refine(
+                        transcript: markdown,
+                        prompt: settingsStore.refinementPrompt,
+                        provider: settingsStore.refinementProvider,
+                        apiKey: settingsStore.refinementAPIKey,
+                        model: settingsStore.refinementModel
+                    )
+                } catch {
+                    Log.meeting.error("Transcript refinement failed, saving raw transcript: \(error)")
+                }
+            }
+
             isMeetingProcessing = false
             meetingStatusMessage = ""
             saveTranscript(markdown: markdown)
