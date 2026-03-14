@@ -1,8 +1,9 @@
 import AppKit
 import SwiftUI
 
-/// Renders the menu bar icon as a composited NSImage (waveform + optional recording dot).
-/// Used as the label of MenuBarExtra since NSViewRepresentable doesn't work in that context.
+/// Manages the pulsing dot state for the menu bar icon.
+/// The waveform is always a template image (separate layer), so it stays system-tinted.
+/// The dot is rendered as its own non-template NSImage overlay to preserve its color.
 @Observable
 @MainActor
 final class MenuBarIconState {
@@ -11,14 +12,10 @@ final class MenuBarIconState {
     var isProcessing = false { didSet { update() } }
     var isMeetingProcessing = false { didSet { update() } }
 
-    private(set) var image: NSImage
+    private(set) var dotImage: NSImage?
 
     private var dotVisible = true
     private var pulseTimer: Timer?
-
-    init() {
-        self.image = Self.renderIcon(dotColor: nil)
-    }
 
     private var shouldPulse: Bool {
         isMeetingRecording || isProcessing || isMeetingProcessing
@@ -30,10 +27,10 @@ final class MenuBarIconState {
         } else {
             stopPulse()
         }
-        rebuildImage()
+        rebuildDot()
     }
 
-    private func rebuildImage() {
+    private func rebuildDot() {
         let dotColor: NSColor?
         if isMeetingRecording {
             dotColor = dotVisible ? .red : .red.withAlphaComponent(0.3)
@@ -44,59 +41,20 @@ final class MenuBarIconState {
         } else {
             dotColor = nil
         }
-        image = Self.renderIcon(dotColor: dotColor)
-    }
-
-    private static func renderIcon(dotColor: NSColor?) -> NSImage {
-        let size = NSSize(width: 18, height: 18)
-
-        // Render waveform as template (always white in menu bar)
-        let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-        guard let symbol = NSImage(systemSymbolName: "waveform", accessibilityDescription: "MyWhispers")?
-            .withSymbolConfiguration(config) else {
-            return NSImage(size: size)
-        }
-        symbol.isTemplate = true
-        let symbolSize = symbol.size
 
         guard let dotColor else {
-            // No dot — return the template symbol directly
-            let img = NSImage(size: size, flipped: false) { rect in
-                let x = (rect.width - symbolSize.width) / 2
-                let y = (rect.height - symbolSize.height) / 2
-                symbol.draw(in: NSRect(x: x, y: y, width: symbolSize.width, height: symbolSize.height))
-                return true
-            }
-            img.isTemplate = true
-            return img
+            dotImage = nil
+            return
         }
 
-        // Composite: template waveform + colored dot
-        // We must draw the waveform in white explicitly since the composite image
-        // cannot be a template (the dot needs its actual color).
-        let img = NSImage(size: size, flipped: false) { rect in
-            // Draw waveform in white (menu bar standard color)
-            NSColor.white.setFill()
-            let x = (rect.width - symbolSize.width) / 2
-            let y = (rect.height - symbolSize.height) / 2
-            let symbolRect = NSRect(x: x, y: y, width: symbolSize.width, height: symbolSize.height)
-            symbol.draw(in: symbolRect)
-
-            // Draw dot
-            let dotSize: CGFloat = 6
-            let dotRect = NSRect(
-                x: rect.width - dotSize,
-                y: 0,
-                width: dotSize,
-                height: dotSize
-            )
+        let dotSize: CGFloat = 6
+        let img = NSImage(size: NSSize(width: dotSize, height: dotSize), flipped: false) { rect in
             dotColor.setFill()
-            NSBezierPath(ovalIn: dotRect).fill()
-
+            NSBezierPath(ovalIn: rect).fill()
             return true
         }
         img.isTemplate = false
-        return img
+        dotImage = img
     }
 
     private func startPulse() {
@@ -106,7 +64,7 @@ final class MenuBarIconState {
             Task { @MainActor in
                 guard let self else { return }
                 self.dotVisible.toggle()
-                self.rebuildImage()
+                self.rebuildDot()
             }
         }
     }
@@ -133,10 +91,19 @@ struct MenuBarIconView: View {
     @State private var iconState = MenuBarIconState()
 
     var body: some View {
-        Image(nsImage: iconState.image)
-            .onChange(of: isMeetingRecording) { _, val in iconState.isMeetingRecording = val }
-            .onChange(of: isRecording) { _, val in iconState.isRecording = val }
-            .onChange(of: isProcessing) { _, val in iconState.isProcessing = val }
-            .onChange(of: isMeetingProcessing) { _, val in iconState.isMeetingProcessing = val }
+        ZStack(alignment: .bottomTrailing) {
+            // Waveform — always template, system handles tinting
+            Image(systemName: "waveform")
+
+            // Colored dot overlay
+            if let dotImage = iconState.dotImage {
+                Image(nsImage: dotImage)
+                    .offset(x: 2, y: 2)
+            }
+        }
+        .onChange(of: isMeetingRecording) { _, val in iconState.isMeetingRecording = val }
+        .onChange(of: isRecording) { _, val in iconState.isRecording = val }
+        .onChange(of: isProcessing) { _, val in iconState.isProcessing = val }
+        .onChange(of: isMeetingProcessing) { _, val in iconState.isMeetingProcessing = val }
     }
 }
