@@ -467,31 +467,28 @@ final class AppState {
 
         isMeetingRecording = false
         isMeetingProcessing = true
-        meetingStatusMessage = "Checking WhisperX..."
-
-        // Ensure WhisperX is installed
-        let installer = WhisperXInstaller.shared
-        if await !installer.isInstalled {
-            meetingStatusMessage = "Installing WhisperX..."
-            do {
-                try await installer.install { [weak self] status in
-                    Task { @MainActor in
-                        self?.meetingStatusMessage = status
-                    }
-                }
-                isWhisperXInstalled = true
-            } catch {
-                isMeetingProcessing = false
-                meetingStatusMessage = ""
-                showPermissionError(error.localizedDescription)
-                return
-            }
-        }
-
-        meetingStatusMessage = "Transcribing meeting..."
 
         do {
-            let markdown = try await recorder.transcribe(wavURL: wavURL)
+            let markdown: String
+            switch settingsStore.diarizationEngine {
+            case .builtIn:
+                meetingStatusMessage = "Downloading models..."
+                markdown = try await recorder.transcribeBuiltIn(wavURL: wavURL)
+            case .whisperX:
+                meetingStatusMessage = "Checking WhisperX..."
+                let installer = WhisperXInstaller.shared
+                if await !installer.isInstalled {
+                    meetingStatusMessage = "Installing WhisperX..."
+                    try await installer.install { [weak self] status in
+                        Task { @MainActor in
+                            self?.meetingStatusMessage = status
+                        }
+                    }
+                    isWhisperXInstalled = true
+                }
+                meetingStatusMessage = "Transcribing meeting..."
+                markdown = try await recorder.transcribe(wavURL: wavURL)
+            }
             isMeetingProcessing = false
             meetingStatusMessage = ""
             saveTranscript(markdown: markdown)
