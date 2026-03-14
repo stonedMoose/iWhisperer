@@ -1,4 +1,5 @@
 import AppKit
+import OSLog
 import SwiftUI
 
 @MainActor
@@ -11,9 +12,14 @@ final class RecordingIndicator {
     func show() -> Bool {
         guard window == nil else { return true }
 
-        guard let caretPoint = Self.caretScreenPosition() else {
-            NSSound.beep()
-            return false
+        let caretPoint: NSPoint
+        if let caret = Self.caretScreenPosition(), (caret.x != 0 || caret.y != 0) {
+            caretPoint = caret
+        } else {
+            // Fallback to mouse cursor when caret position is unavailable or (0,0)
+            let mouseLocation = NSEvent.mouseLocation
+            Log.ui.info("Caret unavailable, falling back to mouse: x=\(mouseLocation.x, privacy: .public) y=\(mouseLocation.y, privacy: .public)")
+            caretPoint = mouseLocation
         }
 
         let width: CGFloat = 48
@@ -32,7 +38,7 @@ final class RecordingIndicator {
         )
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        panel.level = .floating
+        panel.level = .screenSaver
         panel.hasShadow = false
         panel.ignoresMouseEvents = true
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
@@ -68,7 +74,7 @@ final class RecordingIndicator {
         guard AXUIElementCopyAttributeValue(appElement, kAXFocusedUIElementAttribute as CFString, &focusedValue) == .success,
               let focused = focusedValue else { return nil }
 
-        let focusedElement = focused as! AXUIElement
+        guard let focusedElement = focused as? AXUIElement else { return nil }
 
         // Get the selected text range (cursor position)
         var rangeValue: CFTypeRef?
@@ -82,7 +88,8 @@ final class RecordingIndicator {
 
         // Extract CGRect from the AXValue
         var rect = CGRect.zero
-        guard AXValueGetValue(bounds as! AXValue, .cgRect, &rect) else { return nil }
+        guard let boundsAXValue = bounds as? AXValue,
+              AXValueGetValue(boundsAXValue, .cgRect, &rect) else { return nil }
 
         // AX coordinates: origin at top-left of primary display
         // AppKit coordinates: origin at bottom-left of primary display
