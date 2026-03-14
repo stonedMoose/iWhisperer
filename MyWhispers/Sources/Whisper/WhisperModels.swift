@@ -72,7 +72,7 @@ enum DiarizationEngine: String, CaseIterable, Identifiable, Codable {
 
     var displayName: String {
         switch self {
-        case .builtIn: "Built-in (TitaNet)"
+        case .builtIn: "Built-in (no account needed)"
         case .whisperX: "WhisperX (pyannote)"
         }
     }

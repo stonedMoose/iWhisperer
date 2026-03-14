@@ -196,6 +196,10 @@ final class MeetingRecorder {
             language: language == .auto ? nil : language.rawValue
         )
 
+        guard !transcriptionSegments.isEmpty else {
+            throw WhisperXError.transcriptionFailed("Whisper produced no transcription segments")
+        }
+
         // 3. Run sherpa-onnx diarization
         let speakerSegments = try await SherpaOnnxDiarizer.shared.diarize(
             wavPath: wavURL.path,

@@ -472,7 +472,11 @@ final class AppState {
             let markdown: String
             switch settingsStore.diarizationEngine {
             case .builtIn:
-                meetingStatusMessage = "Downloading models..."
+                meetingStatusMessage = "Preparing models..."
+                // Ensure models are downloaded before transcription (shows progress context)
+                _ = try await ModelManager.shared.ensureDiarizationModel(.segmentation)
+                _ = try await ModelManager.shared.ensureDiarizationModel(.embedding)
+                meetingStatusMessage = "Transcribing & identifying speakers..."
                 markdown = try await recorder.transcribeBuiltIn(wavURL: wavURL)
             case .whisperX:
                 meetingStatusMessage = "Checking WhisperX..."
