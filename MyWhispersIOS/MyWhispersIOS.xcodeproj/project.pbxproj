@@ -8,11 +8,15 @@
 
 /* Begin PBXBuildFile section */
 		64A8A5E11F94EB2531689444 /* MyWhispersIOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E70E5C23C556F45FE5D77FE /* MyWhispersIOSApp.swift */; };
+		874511ACE29DCD6B0B0CBB64 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC86445A986697F3A8EAD66B /* HistoryView.swift */; };
+		D0F2CF31B5271993B038E681 /* Transcription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0129818458D6536C43D6E0 /* Transcription.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		8C0129818458D6536C43D6E0 /* Transcription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transcription.swift; sourceTree = "<group>"; };
 		9E70E5C23C556F45FE5D77FE /* MyWhispersIOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyWhispersIOSApp.swift; sourceTree = "<group>"; };
 		B0E3495F0CBC72962FB22B4B /* MyWhispersIOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MyWhispersIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FC86445A986697F3A8EAD66B /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -20,6 +24,7 @@
 			isa = PBXGroup;
 			children = (
 				2596A70C9C99C8151D4F160B /* App */,
+				FBA4ADAA74DD1FA1BD34126C /* History */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -46,6 +51,15 @@
 				B0E3495F0CBC72962FB22B4B /* MyWhispersIOS.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		FBA4ADAA74DD1FA1BD34126C /* History */ = {
+			isa = PBXGroup;
+			children = (
+				FC86445A986697F3A8EAD66B /* HistoryView.swift */,
+				8C0129818458D6536C43D6E0 /* Transcription.swift */,
+			);
+			path = History;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -103,7 +117,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				874511ACE29DCD6B0B0CBB64 /* HistoryView.swift in Sources */,
 				64A8A5E11F94EB2531689444 /* MyWhispersIOSApp.swift in Sources */,
+				D0F2CF31B5271993B038E681 /* Transcription.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

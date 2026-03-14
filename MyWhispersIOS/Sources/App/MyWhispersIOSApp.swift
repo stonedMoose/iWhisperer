@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct MyWhispersIOSApp: App {
@@ -6,13 +7,14 @@ struct MyWhispersIOSApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: Transcription.self)
     }
 }
 
 struct ContentView: View {
     var body: some View {
         NavigationStack {
-            Text("MyWhispers")
+            HistoryView()
                 .navigationTitle("MyWhispers")
         }
     }
