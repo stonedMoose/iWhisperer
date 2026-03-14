@@ -140,9 +140,9 @@ struct MenuBarIconView: View {
 
     var body: some View {
         Image(nsImage: iconState.image)
-            .onChange(of: isMeetingRecording) { _, val in iconState.isMeetingRecording = val }
-            .onChange(of: isRecording) { _, val in iconState.isRecording = val }
-            .onChange(of: isProcessing) { _, val in iconState.isProcessing = val }
-            .onChange(of: isMeetingProcessing) { _, val in iconState.isMeetingProcessing = val }
+            .onChange(of: isMeetingRecording, initial: true) { _, val in iconState.isMeetingRecording = val }
+            .onChange(of: isRecording, initial: true) { _, val in iconState.isRecording = val }
+            .onChange(of: isProcessing, initial: true) { _, val in iconState.isProcessing = val }
+            .onChange(of: isMeetingProcessing, initial: true) { _, val in iconState.isMeetingProcessing = val }
     }
 }
