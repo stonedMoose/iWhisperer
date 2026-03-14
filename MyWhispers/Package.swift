@@ -14,10 +14,17 @@ let package = Package(
             pkgConfig: nil,
             providers: []
         ),
+        .systemLibrary(
+            name: "CSherpaOnnx",
+            path: "Vendor/CSherpaOnnx",
+            pkgConfig: nil,
+            providers: []
+        ),
         .executableTarget(
             name: "MyWhispers",
             dependencies: [
                 "CWhisper",
+                "CSherpaOnnx",
                 "KeyboardShortcuts",
             ],
             path: "Sources",
@@ -27,15 +34,18 @@ let package = Package(
             ],
             cSettings: [
                 .headerSearchPath("../Vendor/whisper-built/include"),
+                .headerSearchPath("../Vendor/sherpa-onnx-built/include"),
             ],
             swiftSettings: [
                 .unsafeFlags([
                     "-I", "Vendor/whisper-built/include",
+                    "-I", "Vendor/sherpa-onnx-built/include",
                 ]),
             ],
             linkerSettings: [
                 .unsafeFlags([
                     "-L", "Vendor/whisper-built/lib",
+                    "-L", "Vendor/sherpa-onnx-built/lib",
                 ]),
                 .linkedFramework("Metal"),
                 .linkedFramework("MetalKit"),
