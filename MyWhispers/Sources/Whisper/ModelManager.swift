@@ -64,8 +64,21 @@ actor ModelManager {
             case .embedding:
                 URL(string: "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/3dspeaker_speech_eres2net_large_sv_zh-cn_3dspeaker_16k.onnx")!
             case .segmentation:
-                URL(string: "https://huggingface.co/onnx-community/pyannote-segmentation-3.0/resolve/main/onnx/model.onnx")!
+                URL(string: "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segmentation-models/sherpa-onnx-pyannote-segmentation-3-0.tar.bz2")!
             }
+        }
+
+        /// Whether the download is an archive that needs extraction.
+        var isArchive: Bool {
+            switch self {
+            case .embedding: false
+            case .segmentation: true
+            }
+        }
+
+        /// The filename inside the archive (if isArchive).
+        var archiveModelPath: String {
+            "sherpa-onnx-pyannote-segmentation-3-0/model.onnx"
         }
 
         var displayName: String {
@@ -100,7 +113,37 @@ actor ModelManager {
             throw ModelManagerError.downloadFailed(model.rawValue)
         }
 
-        try FileManager.default.moveItem(atPath: tempURL.path, toPath: path)
+        if model.isArchive {
+            // Extract .tar.bz2 archive, then copy the model file out
+            let extractDir = FileManager.default.temporaryDirectory
+                .appendingPathComponent("sherpa-extract-\(UUID().uuidString)")
+            try FileManager.default.createDirectory(at: extractDir, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: extractDir) }
+
+            // Move archive to a .tar.bz2 path so tar can handle it
+            let archivePath = extractDir.appendingPathComponent("archive.tar.bz2")
+            try FileManager.default.moveItem(atPath: tempURL.path, toPath: archivePath.path)
+
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+            process.arguments = ["xjf", archivePath.path, "-C", extractDir.path]
+            try process.run()
+            process.waitUntilExit()
+
+            guard process.terminationStatus == 0 else {
+                throw ModelManagerError.downloadFailed("Failed to extract \(model.rawValue) archive")
+            }
+
+            let extractedModel = extractDir.appendingPathComponent(model.archiveModelPath)
+            guard FileManager.default.fileExists(atPath: extractedModel.path) else {
+                throw ModelManagerError.downloadFailed("Model file not found in archive: \(model.archiveModelPath)")
+            }
+
+            try FileManager.default.moveItem(atPath: extractedModel.path, toPath: path)
+        } else {
+            try FileManager.default.moveItem(atPath: tempURL.path, toPath: path)
+        }
+
         Log.whisper.info("Diarization model downloaded to \(path)")
         return path
     }
