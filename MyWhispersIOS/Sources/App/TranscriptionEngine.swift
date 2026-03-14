@@ -1,3 +1,4 @@
+import ActivityKit
 import AVFoundation
 import SwiftData
 import SwiftUI
@@ -26,6 +27,7 @@ final class TranscriptionEngine {
     private var timerTask: Task<Void, Never>?
     private var recordingStartTime: Date?
     private var modelContext: ModelContext?
+    private var liveActivity: Activity<TranscriptionActivityAttributes>?
 
     var selectedModel: WhisperModel {
         get { WhisperModel(rawValue: UserDefaults.standard.string(forKey: "selectedModel") ?? "base") ?? .base }
@@ -112,12 +114,15 @@ final class TranscriptionEngine {
             try audioCapture.startRecording()
             recordingStartTime = Date()
             state = .recording(elapsed: 0)
+            startLiveActivity()
 
             timerTask = Task {
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .milliseconds(100))
+                    try? await Task.sleep(for: .milliseconds(500))
                     guard !Task.isCancelled, let start = self.recordingStartTime else { break }
-                    self.state = .recording(elapsed: Date().timeIntervalSince(start))
+                    let elapsed = Date().timeIntervalSince(start)
+                    self.state = .recording(elapsed: elapsed)
+                    self.updateLiveActivity(status: .recording, elapsed: elapsed)
                 }
             }
 
@@ -141,6 +146,7 @@ final class TranscriptionEngine {
         }
 
         state = .transcribing
+        updateLiveActivity(status: .transcribing)
 
         let langStr = selectedLanguage == .auto ? "auto" : selectedLanguage.rawValue
         let text = await whisperEngine.transcribe(samples: samples, language: langStr)
@@ -171,6 +177,39 @@ final class TranscriptionEngine {
         generator.notificationOccurred(.success)
 
         state = .done(text: text)
+        endLiveActivity()
         Log.whisper.info("Transcription complete")
+    }
+
+    // MARK: - Live Activity
+
+    private func startLiveActivity() {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+
+        let attributes = TranscriptionActivityAttributes()
+        let state = TranscriptionActivityAttributes.ContentState(status: .recording, elapsed: 0)
+
+        do {
+            liveActivity = try Activity.request(
+                attributes: attributes,
+                content: .init(state: state, staleDate: nil)
+            )
+        } catch {
+            Log.app.error("Failed to start Live Activity: \(error)")
+        }
+    }
+
+    private func updateLiveActivity(status: TranscriptionActivityAttributes.ContentState.Status, elapsed: TimeInterval = 0) {
+        Task {
+            let state = TranscriptionActivityAttributes.ContentState(status: status, elapsed: elapsed)
+            await liveActivity?.update(.init(state: state, staleDate: nil))
+        }
+    }
+
+    private func endLiveActivity() {
+        Task {
+            await liveActivity?.end(nil, dismissalPolicy: .immediate)
+            liveActivity = nil
+        }
     }
 }

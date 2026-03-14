@@ -7,16 +7,71 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		120817B1C4A8C5C9DDA7FCF1 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089D4E2819ABCB23499CA9F0 /* SettingsView.swift */; };
+		13A34DBDBA5C8F3049CC4B5D /* ModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B80C11E6F4F6C4F1805D100 /* ModelManager.swift */; };
+		398217EBAA958717D6356735 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5962D85E684071B5CA5F8238 /* OnboardingView.swift */; };
+		3D8E9A2A2E794671BFFD072A /* TranscriptionActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED7D870B0807E286479263B3 /* TranscriptionActivityWidget.swift */; };
+		45767B1EBE23177CE472D636 /* RecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA39766266293162CAE0B2AB /* RecordingView.swift */; };
+		4B00B18E1C4EC8D930D25837 /* LiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB3BD1FAE428DF2AB02E6E40 /* LiveActivityBundle.swift */; };
 		64A8A5E11F94EB2531689444 /* MyWhispersIOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E70E5C23C556F45FE5D77FE /* MyWhispersIOSApp.swift */; };
+		7533D8C79220242D3E82629F /* TranscriptionActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF1330A7179318BC96438DA2 /* TranscriptionActivity.swift */; };
+		7F1F6573675A3F2240739E21 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C076D394F782136D5139241 /* Log.swift */; };
 		874511ACE29DCD6B0B0CBB64 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC86445A986697F3A8EAD66B /* HistoryView.swift */; };
+		8CC64CC10DDC8B0369E3D17A /* WhisperCppEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AA62ABA7534B2646C3FCD96 /* WhisperCppEngine.swift */; };
+		AA1C60C5C87FDCF4FF88E299 /* AudioCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC891F812FDFD95198BBB9CC /* AudioCapture.swift */; };
+		B39132781DAC218921977AFC /* ToggleRecordingIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCC49DEAC91EE2A4F175E883 /* ToggleRecordingIntent.swift */; };
+		BC3C78174D86B1E9BD215946 /* TranscriptionActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF1330A7179318BC96438DA2 /* TranscriptionActivity.swift */; };
 		D0F2CF31B5271993B038E681 /* Transcription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0129818458D6536C43D6E0 /* Transcription.swift */; };
+		EEE9FD83C9EF9393726F90C3 /* MyWhispersIOSWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8885AF5C84C910668BB73959 /* MyWhispersIOSWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F51CE381294EECDBFA3301C8 /* WhisperModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12ADCB08E831050BB1AF9AC /* WhisperModels.swift */; };
+		F9D26C3D9830CF75F2B51F91 /* TranscriptionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EF048862192449D29473470 /* TranscriptionEngine.swift */; };
+		FA810BAC40F64CCD340EC4E6 /* AppShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F039733E70B985AC3C7DC57 /* AppShortcuts.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		A9ECEF45DEF3DB877114E883 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B0D1013FFA0223D94077DE08 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BE09ECBD2D1CC06093AFEDC9;
+			remoteInfo = MyWhispersIOSWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		BB98C1F967801B66568BF91C /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				EEE9FD83C9EF9393726F90C3 /* MyWhispersIOSWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		089D4E2819ABCB23499CA9F0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		5962D85E684071B5CA5F8238 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		5EF048862192449D29473470 /* TranscriptionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionEngine.swift; sourceTree = "<group>"; };
+		5F039733E70B985AC3C7DC57 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
+		8885AF5C84C910668BB73959 /* MyWhispersIOSWidgetExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MyWhispersIOSWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		8AA62ABA7534B2646C3FCD96 /* WhisperCppEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperCppEngine.swift; sourceTree = "<group>"; };
 		8C0129818458D6536C43D6E0 /* Transcription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transcription.swift; sourceTree = "<group>"; };
+		9B80C11E6F4F6C4F1805D100 /* ModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelManager.swift; sourceTree = "<group>"; };
+		9C076D394F782136D5139241 /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
 		9E70E5C23C556F45FE5D77FE /* MyWhispersIOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyWhispersIOSApp.swift; sourceTree = "<group>"; };
+		AB3BD1FAE428DF2AB02E6E40 /* LiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityBundle.swift; sourceTree = "<group>"; };
+		AC891F812FDFD95198BBB9CC /* AudioCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCapture.swift; sourceTree = "<group>"; };
 		B0E3495F0CBC72962FB22B4B /* MyWhispersIOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MyWhispersIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B12ADCB08E831050BB1AF9AC /* WhisperModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperModels.swift; sourceTree = "<group>"; };
+		BCC49DEAC91EE2A4F175E883 /* ToggleRecordingIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleRecordingIntent.swift; sourceTree = "<group>"; };
+		CA39766266293162CAE0B2AB /* RecordingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingView.swift; sourceTree = "<group>"; };
+		ED7D870B0807E286479263B3 /* TranscriptionActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionActivityWidget.swift; sourceTree = "<group>"; };
 		FC86445A986697F3A8EAD66B /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		FF1330A7179318BC96438DA2 /* TranscriptionActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionActivity.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -24,7 +79,12 @@
 			isa = PBXGroup;
 			children = (
 				2596A70C9C99C8151D4F160B /* App */,
+				E9E5CEBD42DC0378D27F8510 /* Audio */,
 				FBA4ADAA74DD1FA1BD34126C /* History */,
+				FC946EEC87D80892E4CB23E5 /* Intents */,
+				0C3845895710C5A14C3C3A3A /* LiveActivity */,
+				EE44B9CFC541EF471D88641D /* Settings */,
+				5FF106A5A61FABF6E1C76142 /* Whisper */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -32,25 +92,74 @@
 		052638C215E4267CC6151D6C = {
 			isa = PBXGroup;
 			children = (
+				6CABC8288CE77C11C9A50B56 /* MyWhispersIOSWidgetExtension */,
 				0524213284D88FC1DE4505D7 /* Sources */,
 				DA77F1A366E1D72321390D38 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
+		0C3845895710C5A14C3C3A3A /* LiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				FF1330A7179318BC96438DA2 /* TranscriptionActivity.swift */,
+			);
+			path = LiveActivity;
+			sourceTree = "<group>";
+		};
 		2596A70C9C99C8151D4F160B /* App */ = {
 			isa = PBXGroup;
 			children = (
+				9C076D394F782136D5139241 /* Log.swift */,
 				9E70E5C23C556F45FE5D77FE /* MyWhispersIOSApp.swift */,
+				5962D85E684071B5CA5F8238 /* OnboardingView.swift */,
+				CA39766266293162CAE0B2AB /* RecordingView.swift */,
+				5EF048862192449D29473470 /* TranscriptionEngine.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		5FF106A5A61FABF6E1C76142 /* Whisper */ = {
+			isa = PBXGroup;
+			children = (
+				9B80C11E6F4F6C4F1805D100 /* ModelManager.swift */,
+				8AA62ABA7534B2646C3FCD96 /* WhisperCppEngine.swift */,
+				B12ADCB08E831050BB1AF9AC /* WhisperModels.swift */,
+			);
+			path = Whisper;
+			sourceTree = "<group>";
+		};
+		6CABC8288CE77C11C9A50B56 /* MyWhispersIOSWidgetExtension */ = {
+			isa = PBXGroup;
+			children = (
+				AB3BD1FAE428DF2AB02E6E40 /* LiveActivityBundle.swift */,
+				ED7D870B0807E286479263B3 /* TranscriptionActivityWidget.swift */,
+			);
+			path = MyWhispersIOSWidgetExtension;
 			sourceTree = "<group>";
 		};
 		DA77F1A366E1D72321390D38 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				B0E3495F0CBC72962FB22B4B /* MyWhispersIOS.app */,
+				8885AF5C84C910668BB73959 /* MyWhispersIOSWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		E9E5CEBD42DC0378D27F8510 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				AC891F812FDFD95198BBB9CC /* AudioCapture.swift */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
+		EE44B9CFC541EF471D88641D /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				089D4E2819ABCB23499CA9F0 /* SettingsView.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		FBA4ADAA74DD1FA1BD34126C /* History */ = {
@@ -62,6 +171,15 @@
 			path = History;
 			sourceTree = "<group>";
 		};
+		FC946EEC87D80892E4CB23E5 /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				5F039733E70B985AC3C7DC57 /* AppShortcuts.swift */,
+				BCC49DEAC91EE2A4F175E883 /* ToggleRecordingIntent.swift */,
+			);
+			path = Intents;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -70,10 +188,12 @@
 			buildConfigurationList = 63D656F87E2D0C3609423D0F /* Build configuration list for PBXNativeTarget "MyWhispersIOS" */;
 			buildPhases = (
 				1385A7BDA0AE51FB763FC3F2 /* Sources */,
+				BB98C1F967801B66568BF91C /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				8649199B9D8818E8F323C65E /* PBXTargetDependency */,
 			);
 			name = MyWhispersIOS;
 			packageProductDependencies = (
@@ -81,6 +201,23 @@
 			productName = MyWhispersIOS;
 			productReference = B0E3495F0CBC72962FB22B4B /* MyWhispersIOS.app */;
 			productType = "com.apple.product-type.application";
+		};
+		BE09ECBD2D1CC06093AFEDC9 /* MyWhispersIOSWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DE6E07E5C6B09582266ABA86 /* Build configuration list for PBXNativeTarget "MyWhispersIOSWidgetExtension" */;
+			buildPhases = (
+				DE1FD6EA251EAE87F78C3D8F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MyWhispersIOSWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = MyWhispersIOSWidgetExtension;
+			productReference = 8885AF5C84C910668BB73959 /* MyWhispersIOSWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -108,6 +245,7 @@
 			projectRoot = "";
 			targets = (
 				9F6EA2A62C18B6F8DADF1AF0 /* MyWhispersIOS */,
+				BE09ECBD2D1CC06093AFEDC9 /* MyWhispersIOSWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -117,15 +255,63 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FA810BAC40F64CCD340EC4E6 /* AppShortcuts.swift in Sources */,
+				AA1C60C5C87FDCF4FF88E299 /* AudioCapture.swift in Sources */,
 				874511ACE29DCD6B0B0CBB64 /* HistoryView.swift in Sources */,
+				7F1F6573675A3F2240739E21 /* Log.swift in Sources */,
+				13A34DBDBA5C8F3049CC4B5D /* ModelManager.swift in Sources */,
 				64A8A5E11F94EB2531689444 /* MyWhispersIOSApp.swift in Sources */,
+				398217EBAA958717D6356735 /* OnboardingView.swift in Sources */,
+				45767B1EBE23177CE472D636 /* RecordingView.swift in Sources */,
+				120817B1C4A8C5C9DDA7FCF1 /* SettingsView.swift in Sources */,
+				B39132781DAC218921977AFC /* ToggleRecordingIntent.swift in Sources */,
 				D0F2CF31B5271993B038E681 /* Transcription.swift in Sources */,
+				7533D8C79220242D3E82629F /* TranscriptionActivity.swift in Sources */,
+				F9D26C3D9830CF75F2B51F91 /* TranscriptionEngine.swift in Sources */,
+				8CC64CC10DDC8B0369E3D17A /* WhisperCppEngine.swift in Sources */,
+				F51CE381294EECDBFA3301C8 /* WhisperModels.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DE1FD6EA251EAE87F78C3D8F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4B00B18E1C4EC8D930D25837 /* LiveActivityBundle.swift in Sources */,
+				BC3C78174D86B1E9BD215946 /* TranscriptionActivity.swift in Sources */,
+				3D8E9A2A2E794671BFFD072A /* TranscriptionActivityWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		8649199B9D8818E8F323C65E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BE09ECBD2D1CC06093AFEDC9 /* MyWhispersIOSWidgetExtension */;
+			targetProxy = A9ECEF45DEF3DB877114E883 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		42E9DF316FFA49DEF584525B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.julienlhermite.MyWhispersIOS.WidgetExtension;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
 		431156DAE6ADDBD7DFF1D2D4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -199,6 +385,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/Vendor/whisper-built/include";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MyWhispers needs microphone access to record your voice for transcription.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIBackgroundModes = audio;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -215,6 +402,12 @@
 					"-lggml-cpu",
 					"-lggml-metal",
 					"-lc++",
+					"-framework",
+					Accelerate,
+					"-framework",
+					Metal,
+					"-framework",
+					MetalKit,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.julienlhermite.MyWhispersIOS;
 				SDKROOT = iphoneos;
@@ -233,6 +426,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/Vendor/whisper-built/include";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MyWhispers needs microphone access to record your voice for transcription.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIBackgroundModes = audio;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -249,10 +443,34 @@
 					"-lggml-cpu",
 					"-lggml-metal",
 					"-lc++",
+					"-framework",
+					Accelerate,
+					"-framework",
+					Metal,
+					"-framework",
+					MetalKit,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.julienlhermite.MyWhispersIOS;
 				SDKROOT = iphoneos;
 				SWIFT_INCLUDE_PATHS = "$(PROJECT_DIR)/Vendor/CWhisper";
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		CB7695BFCC9D00417CCAF1FE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.julienlhermite.MyWhispersIOS.WidgetExtension;
+				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
@@ -330,6 +548,15 @@
 			buildConfigurations = (
 				5B8AE2F0A4D817ED6D813AAE /* Debug */,
 				7040B3B37514712280B9FFA9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DE6E07E5C6B09582266ABA86 /* Build configuration list for PBXNativeTarget "MyWhispersIOSWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				42E9DF316FFA49DEF584525B /* Debug */,
+				CB7695BFCC9D00417CCAF1FE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

@@ -3,15 +3,21 @@ import SwiftData
 
 @main
 struct MyWhispersIOSApp: App {
-    @State private var engine = TranscriptionEngine()
+    @State private var engine = TranscriptionEngineProvider.shared.engine
+    @State private var onboardingComplete = UserDefaults.standard.bool(forKey: "onboardingComplete")
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(engine)
-                .onAppear {
-                    Task { await engine.setup() }
-                }
+            if onboardingComplete {
+                ContentView()
+                    .environment(engine)
+                    .onAppear {
+                        Task { await engine.setup() }
+                    }
+            } else {
+                OnboardingView(isComplete: $onboardingComplete)
+                    .environment(engine)
+            }
         }
         .modelContainer(for: Transcription.self)
     }
@@ -37,8 +43,7 @@ struct ContentView: View {
             }
 
             NavigationStack {
-                Text("Settings")
-                    .navigationTitle("Settings")
+                SettingsView()
             }
             .tabItem {
                 Label("Settings", systemImage: "gear")
