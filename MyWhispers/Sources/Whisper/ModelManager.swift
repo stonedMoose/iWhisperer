@@ -49,29 +49,29 @@ actor ModelManager {
     // MARK: - Diarization models
 
     enum DiarizationModel: String {
-        case titanet = "titanet-large"
-        case sileroVAD = "silero-vad-v6"
+        case embedding = "speaker-embedding"
+        case segmentation = "speaker-segmentation"
 
         var filename: String {
             switch self {
-            case .titanet: "3dspeaker_speech_eres2net_large_sv_zh-cn_3dspeaker_16k.onnx"
-            case .sileroVAD: "silero_vad.onnx"
+            case .embedding: "3dspeaker_speech_eres2net_large_sv_zh-cn_3dspeaker_16k.onnx"
+            case .segmentation: "pyannote-segmentation-3-0.onnx"
             }
         }
 
         var downloadURL: URL {
             switch self {
-            case .titanet:
+            case .embedding:
                 URL(string: "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/3dspeaker_speech_eres2net_large_sv_zh-cn_3dspeaker_16k.onnx")!
-            case .sileroVAD:
-                URL(string: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx")!
+            case .segmentation:
+                URL(string: "https://huggingface.co/onnx-community/pyannote-segmentation-3.0/resolve/main/onnx/model.onnx")!
             }
         }
 
         var displayName: String {
             switch self {
-            case .titanet: "Speaker embedding model (~90 MB)"
-            case .sileroVAD: "Voice activity detection model (~2 MB)"
+            case .embedding: "Speaker embedding model (~90 MB)"
+            case .segmentation: "Speaker segmentation model (~6 MB)"
             }
         }
     }
