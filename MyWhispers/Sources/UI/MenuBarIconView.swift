@@ -123,11 +123,6 @@ final class MenuBarIconState {
         dotVisible = true
     }
 
-    deinit {
-        MainActor.assumeIsolated {
-            pulseTimer?.invalidate()
-        }
-    }
 }
 
 struct MenuBarIconView: View {
