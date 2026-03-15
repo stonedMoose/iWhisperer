@@ -1,6 +1,6 @@
 import AppIntents
 
-struct MyWhispersShortcuts: AppShortcutsProvider {
+struct iWhispererShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: ToggleRecordingIntent(),

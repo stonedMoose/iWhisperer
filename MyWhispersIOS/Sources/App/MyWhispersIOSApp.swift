@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct MyWhispersIOSApp: App {
+struct iWhispererApp: App {
     @State private var engine = TranscriptionEngineProvider.shared.engine
     @State private var onboardingComplete = UserDefaults.standard.bool(forKey: "onboardingComplete")
 

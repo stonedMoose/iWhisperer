@@ -384,7 +384,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/Vendor/whisper-built/include";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MyWhispers needs microphone access to record your voice for transcription.";
+				INFOPLIST_KEY_CFBundleDisplayName = iWhisperer;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "iWhisperer needs microphone access to record your voice for transcription.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIBackgroundModes = audio;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -425,7 +426,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/Vendor/whisper-built/include";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MyWhispers needs microphone access to record your voice for transcription.";
+				INFOPLIST_KEY_CFBundleDisplayName = iWhisperer;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "iWhisperer needs microphone access to record your voice for transcription.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIBackgroundModes = audio;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

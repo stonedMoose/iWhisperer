@@ -2,7 +2,7 @@ import SwiftUI
 import WidgetKit
 
 @main
-struct MyWhispersWidgetBundle: WidgetBundle {
+struct iWhispererWidgetBundle: WidgetBundle {
     var body: some Widget {
         TranscriptionActivityWidget()
     }

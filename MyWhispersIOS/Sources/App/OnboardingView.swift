@@ -31,7 +31,7 @@ struct OnboardingView: View {
             Image(systemName: "waveform.circle.fill")
                 .font(.system(size: 80))
                 .foregroundStyle(.blue)
-            Text("MyWhispers")
+            Text("iWhisperer")
                 .font(.largeTitle.bold())
             Text("Voice to text, powered by local AI.\nNo internet required.")
                 .multilineTextAlignment(.center)
@@ -49,7 +49,7 @@ struct OnboardingView: View {
                 .foregroundStyle(.orange)
             Text("Microphone Access")
                 .font(.title2.bold())
-            Text("MyWhispers needs microphone access to record your voice.")
+            Text("iWhisperer needs microphone access to record your voice.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
             Button("Allow Microphone") {
