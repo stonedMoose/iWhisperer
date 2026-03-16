@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tutorial — MacWhisperer</title>
+  <meta name="description" content="Complete tutorial for MacWhisperer: installation, setup, dictation, meeting recording, AI refinement, and tips.">
+  <meta property="og:title" content="MacWhisperer Tutorial">
+  <meta property="og:description" content="Learn how to use MacWhisperer for private speech-to-text on macOS.">
+  <meta property="og:image" content="assets/icon-large.png">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg-card: #12121a;
+      --bg-card-hover: #1a1a26;
+      --text: #e8e8ed;
+      --text-muted: #8888a0;
+      --accent: #6c5ce7;
+      --accent-glow: rgba(108, 92, 231, 0.3);
+      --accent2: #00cec9;
+      --accent2-glow: rgba(0, 206, 201, 0.15);
+      --border: rgba(255, 255, 255, 0.06);
+      --radius: 16px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 30% 20%, rgba(108, 92, 231, 0.08) 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 80%, rgba(0, 206, 201, 0.05) 0%, transparent 50%);
+      animation: drift 20s ease-in-out infinite alternate;
+      z-index: -1;
+    }
+    @keyframes drift {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      100% { transform: translate(-3%, -3%) rotate(2deg); }
+    }
+
+    /* Nav */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(10, 10, 15, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+    }
+    nav .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 18px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    nav .logo img { width: 28px; height: 28px; border-radius: 6px; }
+    nav .links { display: flex; gap: 24px; align-items: center; }
+    nav .links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    nav .links a:hover { color: var(--text); }
+    nav .links .gh {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    nav .links .gh:hover { border-color: var(--accent); background: rgba(108, 92, 231, 0.1); color: var(--text); }
+
+    /* Hero */
+    .hero {
+      padding: 140px 24px 60px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      background: rgba(108, 92, 231, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(108, 92, 231, 0.25);
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, var(--text) 0%, var(--text-muted) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 18px;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* TOC */
+    .toc {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 24px 60px;
+    }
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .toc-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      text-decoration: none;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.25s ease;
+    }
+    .toc-item:hover { background: var(--bg-card-hover); border-color: rgba(255,255,255,0.1); transform: translateY(-2px); }
+    .toc-num {
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: rgba(108, 92, 231, 0.12);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    /* Tutorial sections */
+    .tutorial { max-width: 800px; margin: 0 auto; padding: 0 24px; }
+
+    .tutorial-section {
+      margin-bottom: 80px;
+      scroll-margin-top: 100px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .section-num {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: rgba(108, 92, 231, 0.12);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 18px;
+    }
+    .section-header h2 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .tutorial-section h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 28px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tutorial-section h3 .icon { font-size: 20px; }
+
+    .tutorial-section p {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      line-height: 1.7;
+    }
+
+    .tutorial-section ul, .tutorial-section ol {
+      color: var(--text-muted);
+      font-size: 15px;
+      margin-bottom: 16px;
+      padding-left: 24px;
+      line-height: 1.8;
+    }
+    .tutorial-section li { margin-bottom: 4px; }
+    .tutorial-section strong { color: var(--text); }
+
+    /* Cards */
+    .card {
+      padding: 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+    }
+    .card h4 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .card p { margin-bottom: 8px; }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* Code blocks */
+    .code {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 24px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--text-muted);
+      overflow-x: auto;
+      margin-bottom: 16px;
+    }
+    .code .prompt { color: var(--accent2); }
+    .code .comment { color: #555570; }
+
+    /* Inline code */
+    code {
+      background: rgba(108, 92, 231, 0.1);
+      color: var(--accent);
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 13px;
+    }
+
+    /* Tip / Warning boxes */
+    .tip, .warning {
+      padding: 18px 22px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .tip {
+      background: rgba(0, 206, 201, 0.06);
+      border: 1px solid rgba(0, 206, 201, 0.15);
+      color: var(--text-muted);
+    }
+    .tip strong { color: var(--accent2); }
+    .warning {
+      background: rgba(253, 121, 68, 0.06);
+      border: 1px solid rgba(253, 121, 68, 0.15);
+      color: var(--text-muted);
+    }
+    .warning strong { color: #fd7944; }
+
+    /* Model table */
+    .model-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .model-table th, .model-table td {
+      padding: 12px 18px;
+      text-align: left;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .model-table th {
+      background: var(--bg-card);
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+    .model-table td { color: var(--text-muted); }
+    .model-table td:first-child { color: var(--text); font-weight: 600; }
+    .model-table tr:last-child td { border-bottom: none; }
+    .model-table .recommended {
+      background: rgba(108, 92, 231, 0.06);
+    }
+
+    /* Keyboard shortcut display */
+    kbd {
+      display: inline-block;
+      padding: 3px 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12px;
+      color: var(--text);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    /* Steps */
+    .numbered-steps {
+      counter-reset: step-counter;
+      list-style: none;
+      padding-left: 0;
+    }
+    .numbered-steps li {
+      counter-increment: step-counter;
+      position: relative;
+      padding-left: 40px;
+      margin-bottom: 20px;
+    }
+    .numbered-steps li::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      top: 2px;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: rgba(108, 92, 231, 0.12);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    /* Flow diagram */
+    .flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin: 24px 0;
+      flex-wrap: wrap;
+    }
+    .flow-step {
+      padding: 10px 18px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+    }
+    .flow-arrow { color: var(--accent); font-size: 18px; }
+
+    /* Back to top */
+    .back-top {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      margin-top: 16px;
+    }
+    .back-top:hover { text-decoration: underline; }
+
+    /* Footer */
+    footer {
+      padding: 48px 24px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      margin-top: 80px;
+    }
+    footer p { color: var(--text-muted); font-size: 13px; }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      nav { padding: 12px 16px; }
+      nav .links a:not(.gh) { display: none; }
+      .hero { padding: 120px 16px 40px; }
+      .toc, .tutorial { padding: 0 16px; }
+      .section-header h2 { font-size: 22px; }
+      .model-table th, .model-table td { padding: 8px 12px; font-size: 13px; }
+      .flow { flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="index.html" class="logo">
+      <img src="assets/icon.png" alt="Whisperer">
+      Whisperer
+    </a>
+    <div class="links">
+      <a href="index.html">Home</a>
+      <a href="index.html#features">Features</a>
+      <a href="#top">Tutorial</a>
+      <a href="https://github.com/stonedMoose/iWhisperer" class="gh" target="_blank">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero" id="top">
+    <div class="badge">Complete Guide</div>
+    <h1>MacWhisperer Tutorial</h1>
+    <p>Everything you need to go from installation to productive dictation, meeting recording, and AI-powered transcript refinement.</p>
+  </section>
+
+  <!-- Table of Contents -->
+  <div class="toc">
+    <div class="toc-grid">
+      <a href="#install" class="toc-item">
+        <span class="toc-num">1</span>
+        Installation
+      </a>
+      <a href="#setup" class="toc-item">
+        <span class="toc-num">2</span>
+        Initial Setup
+      </a>
+      <a href="#models" class="toc-item">
+        <span class="toc-num">3</span>
+        Choosing a Model
+      </a>
+      <a href="#dictation" class="toc-item">
+        <span class="toc-num">4</span>
+        Dictation Mode
+      </a>
+      <a href="#streaming" class="toc-item">
+        <span class="toc-num">5</span>
+        Streaming Mode
+      </a>
+      <a href="#meetings" class="toc-item">
+        <span class="toc-num">6</span>
+        Meeting Recording
+      </a>
+      <a href="#refinement" class="toc-item">
+        <span class="toc-num">7</span>
+        AI Refinement
+      </a>
+      <a href="#settings" class="toc-item">
+        <span class="toc-num">8</span>
+        Settings Reference
+      </a>
+      <a href="#tips" class="toc-item">
+        <span class="toc-num">9</span>
+        Tips &amp; Troubleshooting
+      </a>
+    </div>
+  </div>
+
+  <!-- Tutorial Content -->
+  <div class="tutorial">
+
+    <!-- 1. Installation -->
+    <div class="tutorial-section" id="install">
+      <div class="section-header">
+        <div class="section-num">1</div>
+        <h2>Installation</h2>
+      </div>
+
+      <h3><span class="icon">&#128230;</span> Download the App</h3>
+      <p>Download the latest <strong>.dmg</strong> file from the <a href="https://github.com/stonedMoose/iWhisperer/releases" style="color: var(--accent);">GitHub Releases</a> page. Open the DMG and drag <strong>MacWhisperer.app</strong> to your Applications folder.</p>
+
+      <h3><span class="icon">&#128736;</span> Build from Source (optional)</h3>
+      <p>If you prefer building from source, you'll need <strong>Xcode 15+</strong> and <strong>CMake</strong> installed:</p>
+      <div class="code">
+        <span class="comment"># Install CMake if needed</span><br>
+        <span class="prompt">$</span> brew install cmake<br><br>
+        <span class="comment"># Clone the repository</span><br>
+        <span class="prompt">$</span> git clone https://github.com/stonedMoose/iWhisperer.git<br>
+        <span class="prompt">$</span> cd iWhisperer/Whisperer<br><br>
+        <span class="comment"># Build whisper.cpp native libraries (one-time)</span><br>
+        <span class="prompt">$</span> bash scripts/build-whisper.sh<br><br>
+        <span class="comment"># Build and run</span><br>
+        <span class="prompt">$</span> swift run MacWhisperer
+      </div>
+
+      <div class="tip">
+        <strong>Tip:</strong> MacWhisperer requires <strong>macOS 14 Sonoma</strong> or later and is optimized for Apple Silicon (M1/M2/M3/M4). It also works on Intel Macs but without Metal GPU acceleration.
+      </div>
+    </div>
+
+    <!-- 2. Initial Setup -->
+    <div class="tutorial-section" id="setup">
+      <div class="section-header">
+        <div class="section-num">2</div>
+        <h2>Initial Setup</h2>
+      </div>
+
+      <p>On first launch, MacWhisperer opens a <strong>setup wizard</strong> that walks you through two essential permissions:</p>
+
+      <h3><span class="icon">&#127908;</span> Microphone Permission</h3>
+      <p>MacWhisperer needs access to your microphone to capture audio. macOS will display a system prompt — click <strong>Allow</strong>. You can verify this later in <strong>System Settings &gt; Privacy &amp; Security &gt; Microphone</strong>.</p>
+
+      <h3><span class="icon">&#9855;</span> Accessibility Permission</h3>
+      <p>This permission allows MacWhisperer to inject transcribed text directly at your cursor position in any application. Without it, the app can still copy text to your clipboard but cannot type it automatically.</p>
+      <ol class="numbered-steps">
+        <li>Open <strong>System Settings &gt; Privacy &amp; Security &gt; Accessibility</strong></li>
+        <li>Click the <strong>+</strong> button and add <strong>MacWhisperer</strong></li>
+        <li>Toggle it <strong>on</strong></li>
+      </ol>
+
+      <h3><span class="icon">&#128190;</span> First Model Download</h3>
+      <p>After granting permissions, MacWhisperer downloads the default Whisper model (<strong>Small</strong>, ~460 MB). This happens once — the model is cached locally for all future use. No network access is needed after this.</p>
+
+      <div class="flow">
+        <div class="flow-step">Launch app</div>
+        <span class="flow-arrow">&#10132;</span>
+        <div class="flow-step">Grant permissions</div>
+        <span class="flow-arrow">&#10132;</span>
+        <div class="flow-step">Download model</div>
+        <span class="flow-arrow">&#10132;</span>
+        <div class="flow-step">Ready to use</div>
+      </div>
+    </div>
+
+    <!-- 3. Choosing a Model -->
+    <div class="tutorial-section" id="models">
+      <div class="section-header">
+        <div class="section-num">3</div>
+        <h2>Choosing a Model</h2>
+      </div>
+
+      <p>MacWhisperer offers five Whisper model sizes. Larger models are more accurate but slower and use more memory. Choose based on your hardware and needs:</p>
+
+      <table class="model-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Size</th>
+            <th>Speed</th>
+            <th>Accuracy</th>
+            <th>Best For</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Tiny</td>
+            <td>~75 MB</td>
+            <td>Fastest</td>
+            <td>Basic</td>
+            <td>Quick notes, single language</td>
+          </tr>
+          <tr>
+            <td>Base</td>
+            <td>~140 MB</td>
+            <td>Very fast</td>
+            <td>Good</td>
+            <td>Casual dictation</td>
+          </tr>
+          <tr class="recommended">
+            <td>Small &#9733;</td>
+            <td>~460 MB</td>
+            <td>Fast</td>
+            <td>Very good</td>
+            <td>Daily use (recommended)</td>
+          </tr>
+          <tr>
+            <td>Medium</td>
+            <td>~1.5 GB</td>
+            <td>Moderate</td>
+            <td>Excellent</td>
+            <td>Important transcriptions</td>
+          </tr>
+          <tr>
+            <td>Large v3</td>
+            <td>~3 GB</td>
+            <td>Slowest</td>
+            <td>Best</td>
+            <td>Multi-language, maximum accuracy</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="tip">
+        <strong>Recommendation:</strong> Start with <strong>Small</strong> — it offers the best balance of speed and accuracy for most use cases. Switch to <strong>Large v3</strong> if you frequently transcribe multilingual audio or need maximum precision.
+      </div>
+
+      <p>To change your model, open Settings from the menu bar icon and select a new model under the <strong>Model</strong> section. The new model will be downloaded automatically if not already cached.</p>
+    </div>
+
+    <!-- 4. Dictation Mode -->
+    <div class="tutorial-section" id="dictation">
+      <div class="section-header">
+        <div class="section-num">4</div>
+        <h2>Dictation Mode</h2>
+      </div>
+
+      <p>This is MacWhisperer's core feature: speak, and text appears at your cursor. It works in <strong>any application</strong> — text editors, email, chat apps, browsers, search fields, and more.</p>
+
+      <h3><span class="icon">&#127929;</span> How to Dictate</h3>
+      <ol class="numbered-steps">
+        <li><strong>Place your cursor</strong> where you want text to appear (e.g., an email draft, a document, a search field)</li>
+        <li><strong>Hold your keyboard shortcut</strong> (configure it in Settings &gt; Insert at Caret). A purple recording indicator appears on screen</li>
+        <li><strong>Speak naturally</strong> — don't worry about pace or pauses</li>
+        <li><strong>Release the shortcut</strong> — MacWhisperer processes the audio and injects the transcribed text at your cursor position</li>
+      </ol>
+
+      <div class="flow">
+        <div class="flow-step">Hold shortcut</div>
+        <span class="flow-arrow">&#10132;</span>
+        <div class="flow-step">Speak</div>
+        <span class="flow-arrow">&#10132;</span>
+        <div class="flow-step">Release</div>
+        <span class="flow-arrow">&#10132;</span>
+        <div class="flow-step">Text appears at cursor</div>
+      </div>
+
+      <h3><span class="icon">&#9000;</span> Setting the Keyboard Shortcut</h3>
+      <p>Open Settings from the menu bar icon. Under <strong>Insert at Caret</strong>, click the recorder field and press the key combination you want (e.g., <kbd>&#8997; Option</kbd> + <kbd>Space</kbd> or <kbd>F5</kbd>). This is a <strong>hold-to-record</strong> shortcut — recording starts when you press and stops when you release.</p>
+
+      <div class="warning">
+        <strong>Important:</strong> Avoid shortcuts already used by macOS or other apps. Common safe choices: <kbd>&#8997; Option</kbd> + <kbd>Space</kbd>, <kbd>Fn</kbd> + <kbd>F5</kbd>, or <kbd>&#8963; Ctrl</kbd> + <kbd>&#8679; Shift</kbd> + <kbd>R</kbd>.
+      </div>
+    </div>
+
+    <!-- 5. Streaming Mode -->
+    <div class="tutorial-section" id="streaming">
+      <div class="section-header">
+        <div class="section-num">5</div>
+        <h2>Streaming Mode</h2>
+      </div>
+
+      <p>Streaming mode transcribes audio <strong>in real time</strong> as you speak, instead of waiting for you to finish. Words appear progressively as they are recognized.</p>
+
+      <h3><span class="icon">&#128225;</span> How It Works</h3>
+      <p>When streaming is enabled, MacWhisperer processes audio in small chunks (3-second windows) and injects recognized words immediately. A stability algorithm ensures that only confident words are typed — earlier words may be revised as more context arrives.</p>
+
+      <h3><span class="icon">&#9881;</span> Enable Streaming</h3>
+      <p>Open Settings and toggle <strong>Enable streaming mode</strong> under the <strong>Streaming</strong> section. Then use the same hold-to-record shortcut — the only difference is that text appears while you're still speaking.</p>
+
+      <div class="tip">
+        <strong>When to use:</strong> Streaming is great for live presentations, brainstorming, or when you want immediate visual feedback. For formal documents, the standard (batch) mode is often more accurate since it processes the full audio at once.
+      </div>
+    </div>
+
+    <!-- 6. Meeting Recording -->
+    <div class="tutorial-section" id="meetings">
+      <div class="section-header">
+        <div class="section-num">6</div>
+        <h2>Meeting Recording</h2>
+      </div>
+
+      <p>MacWhisperer can record entire meetings and produce a timestamped transcript with <strong>automatic speaker diarization</strong> — each participant is identified and labeled.</p>
+
+      <h3><span class="icon">&#127916;</span> Start a Meeting Recording</h3>
+      <ol class="numbered-steps">
+        <li>Set up a <strong>Meeting shortcut</strong> in Settings under the Meeting section (e.g., <kbd>&#8963; Ctrl</kbd> + <kbd>&#8679; Shift</kbd> + <kbd>M</kbd>)</li>
+        <li>Press the shortcut to <strong>start recording</strong> — the menu bar icon indicates active recording and elapsed time</li>
+        <li>Press the shortcut again to <strong>stop recording</strong></li>
+        <li>MacWhisperer processes the audio: transcription + speaker diarization</li>
+        <li>A <strong>Markdown transcript</strong> is saved to your configured transcript directory</li>
+      </ol>
+
+      <h3><span class="icon">&#128196;</span> Transcript Output</h3>
+      <p>Meeting transcripts are saved as Markdown files with the following format:</p>
+      <div class="code">
+        <span class="comment"># Meeting — 2025-03-16 14:30</span><br><br>
+        <span style="color: var(--accent2);">[00:00]</span> <strong style="color: var(--text);">SPEAKER_00:</strong> Let's start with the Q4 results...<br>
+        <span style="color: var(--accent2);">[00:15]</span> <strong style="color: var(--text);">SPEAKER_01:</strong> Revenue is up 12% compared to last quarter.<br>
+        <span style="color: var(--accent2);">[00:28]</span> <strong style="color: var(--text);">SPEAKER_00:</strong> Great. What about the mobile launch timeline?<br>
+        <span style="color: var(--accent2);">[00:35]</span> <strong style="color: var(--text);">SPEAKER_02:</strong> We're targeting early April...
+      </div>
+
+      <h3><span class="icon">&#128193;</span> Transcript Storage</h3>
+      <p>By default, transcripts are saved in your <strong>Documents</strong> folder. Change this in Settings &gt; <strong>Transcript location</strong> by clicking <strong>Choose</strong> and selecting your preferred directory.</p>
+
+      <div class="tip">
+        <strong>Tip:</strong> Point the transcript directory to a cloud-synced folder (iCloud Drive, Dropbox, etc.) to automatically back up all your meeting notes.
+      </div>
+    </div>
+
+    <!-- 7. AI Refinement -->
+    <div class="tutorial-section" id="refinement">
+      <div class="section-header">
+        <div class="section-num">7</div>
+        <h2>AI Transcript Refinement</h2>
+      </div>
+
+      <p>After a meeting recording, MacWhisperer can <strong>optionally</strong> send the transcript to an LLM to clean it up: identify speakers by name, fix transcription errors, and improve readability.</p>
+
+      <div class="warning">
+        <strong>Privacy note:</strong> This is the only feature that sends data outside your machine. It is disabled by default and entirely optional. The core transcription always remains 100% local.
+      </div>
+
+      <h3><span class="icon">&#9881;</span> Configure Refinement</h3>
+      <ol class="numbered-steps">
+        <li>Open Settings and scroll to the <strong>AI Refinement</strong> section</li>
+        <li>Toggle <strong>Refine transcript with AI</strong> on</li>
+        <li>Choose your <strong>provider</strong>:</li>
+      </ol>
+
+      <div class="card">
+        <h4>OpenAI</h4>
+        <p>Uses GPT-4o by default. Requires an API key from <a href="https://platform.openai.com" style="color: var(--accent);">platform.openai.com</a>.</p>
+      </div>
+      <div class="card">
+        <h4>Anthropic</h4>
+        <p>Uses Claude Sonnet by default. Requires an API key from <a href="https://console.anthropic.com" style="color: var(--accent);">console.anthropic.com</a>.</p>
+      </div>
+      <div class="card">
+        <h4>Claude Code (CLI)</h4>
+        <p>Uses Claude Code installed locally — <strong>no API key needed</strong>. Requires <a href="https://claude.ai/code" style="color: var(--accent);">Claude Code</a> to be installed on your system.</p>
+      </div>
+
+      <h3><span class="icon">&#9997;</span> Custom Prompts</h3>
+      <p>You can customize the refinement prompt in Settings. The default prompt instructs the LLM to identify speakers by name from context clues, fix misattributed speech segments, and clean up transcription errors. Edit it to match your specific needs — for example, you could add participant names upfront.</p>
+    </div>
+
+    <!-- 8. Settings Reference -->
+    <div class="tutorial-section" id="settings">
+      <div class="section-header">
+        <div class="section-num">8</div>
+        <h2>Settings Reference</h2>
+      </div>
+
+      <p>Access all settings by clicking the MacWhisperer icon in the menu bar and selecting <strong>Settings</strong>. The settings panel is organized into four columns:</p>
+
+      <div class="card">
+        <h4>&#9881; General</h4>
+        <ul>
+          <li><strong>Launch at Login</strong> — start MacWhisperer automatically when you log in</li>
+          <li><strong>App Language</strong> — interface language (English, French, Spanish, Chinese, Portuguese, German)</li>
+          <li><strong>Model</strong> — select the Whisper model size (Tiny to Large v3)</li>
+          <li><strong>Permissions</strong> — verify microphone and accessibility status, re-run setup guide</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>&#127760; Languages</h4>
+        <ul>
+          <li><strong>Preferred Languages</strong> — select which languages you commonly speak. This helps Whisper prioritize detection. Supported: English, French, German, Spanish, Italian, Portuguese, Dutch, Japanese, Chinese, Korean, Russian, Arabic</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>&#9000; Insert at Caret</h4>
+        <ul>
+          <li><strong>Keyboard Shortcut</strong> — hold-to-record shortcut for dictation</li>
+          <li><strong>Streaming Mode</strong> — toggle real-time transcription on/off</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>&#128101; Meeting</h4>
+        <ul>
+          <li><strong>Meeting Shortcut</strong> — toggle shortcut for starting/stopping meeting recordings</li>
+          <li><strong>Transcript Location</strong> — directory where meeting transcripts are saved</li>
+          <li><strong>AI Refinement</strong> — provider, API key, model, and custom prompt</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 9. Tips & Troubleshooting -->
+    <div class="tutorial-section" id="tips">
+      <div class="section-header">
+        <div class="section-num">9</div>
+        <h2>Tips &amp; Troubleshooting</h2>
+      </div>
+
+      <h3><span class="icon">&#128161;</span> Best Practices</h3>
+      <ul>
+        <li><strong>Speak clearly</strong> at a natural pace — Whisper handles pauses and hesitations well</li>
+        <li><strong>Use a good microphone</strong> — built-in MacBook mics work, but a dedicated mic improves accuracy significantly</li>
+        <li><strong>Match model to task</strong> — use Small for daily dictation, Large v3 for important or multilingual recordings</li>
+        <li><strong>Quiet environment</strong> — background noise reduces accuracy, especially with smaller models</li>
+        <li><strong>Set preferred languages</strong> — narrowing the language list improves detection speed and accuracy</li>
+      </ul>
+
+      <h3><span class="icon">&#128295;</span> Common Issues</h3>
+
+      <div class="card">
+        <h4>Text doesn't appear at my cursor</h4>
+        <p>The <strong>Accessibility permission</strong> is missing or disabled. Go to System Settings &gt; Privacy &amp; Security &gt; Accessibility and ensure MacWhisperer is toggled on. You may need to remove and re-add the app if you updated it.</p>
+      </div>
+
+      <div class="card">
+        <h4>Recording doesn't start</h4>
+        <p>Check that the <strong>Microphone permission</strong> is granted (System Settings &gt; Privacy &amp; Security &gt; Microphone). Also verify your keyboard shortcut isn't conflicting with another app.</p>
+      </div>
+
+      <div class="card">
+        <h4>Transcription is slow</h4>
+        <p>Switch to a smaller model (Tiny or Base). On Intel Macs, Metal GPU acceleration is not available, so the Small model is the recommended maximum.</p>
+      </div>
+
+      <div class="card">
+        <h4>Wrong language detected</h4>
+        <p>Open Settings &gt; Languages and configure your <strong>Preferred Languages</strong>. Reducing the list helps Whisper detect your language faster and more accurately.</p>
+      </div>
+
+      <div class="card">
+        <h4>Model download fails</h4>
+        <p>Models are downloaded from HuggingFace. Ensure you have an internet connection. If the download is interrupted, MacWhisperer will retry on next launch. You can also manually download the GGML model files from <a href="https://huggingface.co/ggerganov/whisper.cpp" style="color: var(--accent);">huggingface.co/ggerganov/whisper.cpp</a>.</p>
+      </div>
+
+      <div class="card">
+        <h4>App doesn't appear in menu bar</h4>
+        <p>MacWhisperer is a <strong>menu bar app</strong> — it doesn't have a Dock icon. Look for the Whisperer icon in the top-right area of your menu bar. If you have many menu bar icons, it may be hidden by the notch on MacBook Pro.</p>
+      </div>
+
+      <a href="#top" class="back-top">&#8593; Back to top</a>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>
+      Made by <a href="https://github.com/stonedMoose">Julien Lhermite</a> &middot;
+      <a href="index.html">Home</a> &middot;
+      <a href="https://github.com/stonedMoose/iWhisperer">Source Code</a> &middot;
+      Powered by <a href="https://github.com/ggerganov/whisper.cpp">whisper.cpp</a>
+    </p>
+  </footer>
+
+</body>
+</html>

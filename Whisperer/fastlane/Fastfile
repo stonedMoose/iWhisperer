@@ -1,0 +1,138 @@
+default_platform(:mac)
+
+APP_NAME        = "MacWhisperer"
+BUNDLE_ID       = "fr.moose.Whisperer"
+PROJECT_DIR     = File.expand_path("..", __dir__)
+APP_BUNDLE      = File.join(PROJECT_DIR, "#{APP_NAME}.app")
+DMG_OUTPUT      = File.join(PROJECT_DIR, "#{APP_NAME}.dmg")
+ZIP_OUTPUT      = File.join(PROJECT_DIR, "#{APP_NAME}.zip")
+ENTITLEMENTS    = File.join(PROJECT_DIR, "MacWhisperer.entitlements")
+
+# Read version from Info.plist (set by bundle.sh)
+def app_version
+  `/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "#{APP_BUNDLE}/Contents/Info.plist"`.strip
+rescue
+  "0.1.0"
+end
+
+platform :mac do
+  # ---------------------------------------------------------------------------
+  # build - compile whisper.cpp + swift + create signed .app bundle
+  # ---------------------------------------------------------------------------
+  desc "Build the .app bundle (calls bundle.sh)"
+  lane :build do
+    sh("cd #{PROJECT_DIR} && bash scripts/bundle.sh")
+    UI.success("Built #{APP_BUNDLE}")
+  end
+
+  # ---------------------------------------------------------------------------
+  # notarize_app - submit to Apple notary service and staple
+  # ---------------------------------------------------------------------------
+  desc "Notarize the .app with Apple (requires App Store Connect API key)"
+  lane :notarize_app do |options|
+    unless File.exist?(APP_BUNDLE)
+      UI.user_error!("#{APP_BUNDLE} not found. Run `fastlane build` first.")
+    end
+
+    # Create a ZIP for notarization submission
+    sh("ditto -c -k --keepParent '#{APP_BUNDLE}' '#{ZIP_OUTPUT}'")
+
+    notarize(
+      package: ZIP_OUTPUT,
+      bundle_id: BUNDLE_ID,
+      api_key_path: options[:api_key_path] || File.join(__dir__, "api_key.json"),
+      print_log: true
+    )
+
+    # Staple the notarization ticket to the .app
+    sh("xcrun stapler staple '#{APP_BUNDLE}'")
+    sh("xcrun stapler validate '#{APP_BUNDLE}'")
+
+    # Clean up the temp zip
+    File.delete(ZIP_OUTPUT) if File.exist?(ZIP_OUTPUT)
+
+    UI.success("Notarization complete and stapled to #{APP_BUNDLE}")
+  end
+
+  # ---------------------------------------------------------------------------
+  # dmg - package the .app into a DMG
+  # ---------------------------------------------------------------------------
+  desc "Create a DMG from the .app bundle"
+  lane :dmg do
+    unless File.exist?(APP_BUNDLE)
+      UI.user_error!("#{APP_BUNDLE} not found. Run `fastlane build` first.")
+    end
+
+    File.delete(DMG_OUTPUT) if File.exist?(DMG_OUTPUT)
+
+    sh(
+      "hdiutil create -volname '#{APP_NAME}' " \
+      "-srcfolder '#{APP_BUNDLE}' " \
+      "-ov -format UDZO " \
+      "'#{DMG_OUTPUT}'"
+    )
+
+    UI.success("DMG created at #{DMG_OUTPUT}")
+  end
+
+  # ---------------------------------------------------------------------------
+  # release - full pipeline: build -> notarize -> dmg -> GitHub release
+  # ---------------------------------------------------------------------------
+  desc "Full release: build, notarize, package DMG, create GitHub release"
+  lane :release do |options|
+    build
+
+    if options[:skip_notarize]
+      UI.important("Skipping notarization (--skip_notarize)")
+    else
+      notarize_app(api_key_path: options[:api_key_path])
+    end
+
+    dmg
+
+    version = options[:version] || app_version
+    tag = "v#{version}"
+
+    # Zip the .app for direct download
+    sh("ditto -c -k --keepParent '#{APP_BUNDLE}' '#{ZIP_OUTPUT}'")
+
+    if options[:github]
+      set_github_release(
+        repository_name: options[:repo] || "stonedMoose/iWhisperer",
+        tag_name: tag,
+        name: "#{APP_NAME} #{version}",
+        description: options[:changelog] || "MacWhisperer #{version}",
+        upload_assets: [DMG_OUTPUT, ZIP_OUTPUT],
+        is_draft: options[:draft] != false
+      )
+      UI.success("GitHub release #{tag} created with DMG + ZIP")
+    else
+      UI.success("Ready: #{DMG_OUTPUT} and #{ZIP_OUTPUT} — pass github:true to create a release")
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # distribute - build + dmg (no notarization, for local/testing distribution)
+  # ---------------------------------------------------------------------------
+  desc "Quick distribution: build + DMG (no notarization)"
+  lane :distribute do
+    build
+    dmg
+    UI.success("Ready to distribute: #{DMG_OUTPUT}")
+  end
+
+  # ---------------------------------------------------------------------------
+  # appstore - build, sign for App Store, create .pkg, upload
+  # ---------------------------------------------------------------------------
+  desc "Build, sign, package, and upload to App Store Connect"
+  lane :appstore do |options|
+    if options[:upload]
+      sh("cd #{PROJECT_DIR} && bash scripts/appstore.sh --upload")
+    else
+      sh("cd #{PROJECT_DIR} && bash scripts/appstore.sh")
+    end
+
+    pkg_path = File.join(PROJECT_DIR, "#{APP_NAME}.pkg")
+    UI.success("App Store package ready: #{pkg_path}")
+  end
+end

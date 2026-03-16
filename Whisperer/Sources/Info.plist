@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>fr.moose.Whisperer</string>
+    <key>CFBundleName</key>
+    <string>MacWhisperer</string>
+    <key>CFBundleIconName</key>
+    <string>AppIcon</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>MacWhisperer needs microphone access to record speech for transcription.</string>
+</dict>
+</plist>

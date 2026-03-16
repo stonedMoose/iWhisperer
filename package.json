@@ -1,0 +1,19 @@
+{
+  "name": "whisperer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MacWhisperer (macOS) + iWhisperer (iOS) — local speech-to-text",
+  "scripts": {
+    "build:mac": "cd Whisperer && swift build",
+    "build:ios": "cd iWhisperer && xcodegen generate && xcodebuild -project iWhisperer.xcodeproj -scheme iWhisperer -sdk iphoneos -configuration Debug build CODE_SIGNING_ALLOWED=NO",
+    "launch:mac": "cd Whisperer && swift run MacWhisperer",
+    "launch:ios": "cd iWhisperer && xcodebuild -project iWhisperer.xcodeproj -scheme iWhisperer -sdk iphoneos -configuration Debug build CODE_SIGNING_ALLOWED=NO && open iWhisperer.xcodeproj",
+    "kill:mac": "pkill -f '.build/debug/MacWhisperer' || true",
+    "kill:ios": "xcrun simctl terminate booted com.julienlhermite.iWhisperer || true",
+    "bundle:mac": "cd Whisperer && bash scripts/bundle.sh",
+    "distribute:mac": "cd Whisperer && bash scripts/distribute.sh",
+    "release:mac": "cd Whisperer && bash scripts/distribute.sh release",
+    "appstore:mac": "cd Whisperer && bash scripts/distribute.sh appstore",
+    "appstore:mac:upload": "cd Whisperer && bash scripts/distribute.sh appstore --upload"
+  }
+}

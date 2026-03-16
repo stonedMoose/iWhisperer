@@ -1,3 +1,38 @@
-MyWhispers/Vendor/whisper-built/
-MyWhispers/.build/whisper-cpp/
-MyWhispersIOS/Vendor/whisper-built/
+# Build artifacts
+Whisperer/.build/
+Whisperer/Vendor/whisper-built/
+Whisperer/Vendor/sherpa-onnx-built/
+iWhisperer/Vendor/whisper-built/
+iWhisperer/.build/
+
+# Generated bundles
+Whisperer/MacWhisperer.app
+Whisperer/MacWhisperer.dmg
+Whisperer/MacWhisperer.zip
+
+# Xcode
+iWhisperer/iWhisperer.xcodeproj/
+*.xcuserdata
+xcuserdata/
+DerivedData/
+*.xcworkspace/xcuserdata/
+
+# Fastlane
+Whisperer/fastlane/report.xml
+Whisperer/fastlane/README.md
+Whisperer/fastlane/api_key.json
+Whisperer/fastlane/AuthKey_*.p8
+
+# App Store build artifacts
+Whisperer/MacWhisperer.pkg
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Node
+node_modules/
+
+# Misc
+.grepai/

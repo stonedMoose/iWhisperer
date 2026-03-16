@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Whisperer — Private Speech-to-Text for Apple</title>
+  <meta name="description" content="Local, private speech-to-text for macOS and iOS. Powered by whisper.cpp with Metal GPU acceleration. No cloud, no subscription.">
+  <meta property="og:title" content="Whisperer — Private Speech-to-Text">
+  <meta property="og:description" content="Local speech-to-text for macOS and iOS. Your voice never leaves your device.">
+  <meta property="og:image" content="assets/icon-large.png">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg-card: #12121a;
+      --bg-card-hover: #1a1a26;
+      --text: #e8e8ed;
+      --text-muted: #8888a0;
+      --accent: #6c5ce7;
+      --accent-glow: rgba(108, 92, 231, 0.3);
+      --accent2: #00cec9;
+      --accent2-glow: rgba(0, 206, 201, 0.15);
+      --border: rgba(255, 255, 255, 0.06);
+      --radius: 16px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Subtle animated gradient background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 30% 20%, rgba(108, 92, 231, 0.08) 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 80%, rgba(0, 206, 201, 0.05) 0%, transparent 50%);
+      animation: drift 20s ease-in-out infinite alternate;
+      z-index: -1;
+    }
+    @keyframes drift {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      100% { transform: translate(-3%, -3%) rotate(2deg); }
+    }
+
+    /* Nav */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(10, 10, 15, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+    }
+    nav .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 18px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    nav .logo img { width: 28px; height: 28px; border-radius: 6px; }
+    nav .links { display: flex; gap: 24px; align-items: center; }
+    nav .links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    nav .links a:hover { color: var(--text); }
+    nav .links .gh {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    nav .links .gh:hover { border-color: var(--accent); background: rgba(108, 92, 231, 0.1); color: var(--text); }
+
+    /* Hero */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+    }
+    .hero .icon {
+      width: 96px;
+      height: 96px;
+      border-radius: 22px;
+      margin-bottom: 32px;
+      box-shadow: 0 0 60px var(--accent-glow), 0 0 120px rgba(108, 92, 231, 0.1);
+    }
+    .hero .badge {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      background: rgba(108, 92, 231, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(108, 92, 231, 0.25);
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(40px, 7vw, 72px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, var(--text) 0%, var(--text-muted) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 18px;
+      color: var(--text-muted);
+      max-width: 540px;
+      margin-bottom: 40px;
+    }
+    .hero .cta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.25s ease;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #845ef7);
+      color: #fff;
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--accent-glow); }
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--bg-card-hover); border-color: rgba(255,255,255,0.12); }
+
+    /* Platforms */
+    .platforms {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 48px;
+      flex-wrap: wrap;
+    }
+    .platform-tag {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .platform-tag svg { width: 16px; height: 16px; opacity: 0.7; }
+
+    /* Section layout */
+    section { padding: 100px 24px; max-width: 1100px; margin: 0 auto; }
+    section h2 {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    section .subtitle {
+      color: var(--text-muted);
+      font-size: 17px;
+      margin-bottom: 48px;
+      max-width: 560px;
+    }
+
+    /* Feature grid */
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    .feature {
+      padding: 28px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: all 0.3s ease;
+    }
+    .feature:hover { background: var(--bg-card-hover); border-color: rgba(255,255,255,0.1); transform: translateY(-2px); }
+    .feature .icon-wrap {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      font-size: 20px;
+    }
+    .feature .icon-wrap.purple { background: rgba(108, 92, 231, 0.15); }
+    .feature .icon-wrap.teal { background: rgba(0, 206, 201, 0.15); }
+    .feature .icon-wrap.orange { background: rgba(253, 121, 68, 0.15); }
+    .feature .icon-wrap.blue { background: rgba(9, 132, 227, 0.15); }
+    .feature .icon-wrap.pink { background: rgba(232, 67, 147, 0.15); }
+    .feature .icon-wrap.green { background: rgba(0, 184, 148, 0.15); }
+    .feature h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .feature p { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+
+    /* Comparison table */
+    .compare {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-top: 48px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .compare th, .compare td {
+      padding: 14px 20px;
+      text-align: left;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .compare th {
+      background: var(--bg-card);
+      font-weight: 700;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+    .compare th:first-child { color: var(--text); }
+    .compare td { color: var(--text-muted); }
+    .compare td:first-child { color: var(--text); font-weight: 600; }
+    .compare tr:last-child td { border-bottom: none; }
+    .compare .check { color: var(--accent2); }
+    .compare .dash { opacity: 0.3; }
+
+    /* How it works */
+    .steps { display: flex; flex-direction: column; gap: 0; margin-top: 48px; }
+    .step {
+      display: flex;
+      gap: 24px;
+      padding: 28px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: rgba(108, 92, 231, 0.12);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 16px;
+    }
+    .step h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .step p { font-size: 14px; color: var(--text-muted); }
+
+    /* Privacy banner */
+    .privacy-banner {
+      margin: 0 auto;
+      max-width: 1100px;
+      padding: 48px;
+      background: linear-gradient(135deg, rgba(108, 92, 231, 0.08), rgba(0, 206, 201, 0.06));
+      border: 1px solid rgba(108, 92, 231, 0.15);
+      border-radius: var(--radius);
+      text-align: center;
+    }
+    .privacy-banner h2 { font-size: 28px; margin-bottom: 12px; }
+    .privacy-banner p { color: var(--text-muted); max-width: 500px; margin: 0 auto 24px; font-size: 15px; }
+    .privacy-points {
+      display: flex;
+      gap: 32px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 24px;
+    }
+    .privacy-point {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .privacy-point .check-icon { color: var(--accent2); font-size: 18px; }
+
+    /* Footer */
+    footer {
+      padding: 48px 24px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      margin-top: 80px;
+    }
+    footer p { color: var(--text-muted); font-size: 13px; }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      nav { padding: 12px 16px; }
+      nav .links a:not(.gh) { display: none; }
+      section { padding: 60px 16px; }
+      .compare { font-size: 13px; }
+      .compare th, .compare td { padding: 10px 12px; }
+      .privacy-banner { padding: 32px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="#" class="logo">
+      <img src="assets/icon.png" alt="Whisperer">
+      Whisperer
+    </a>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#compare">Apps</a>
+      <a href="tutorial.html">Tutorial</a>
+      <a href="https://github.com/stonedMoose/iWhisperer" class="gh" target="_blank">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <img src="assets/icon.png" alt="Whisperer" class="icon">
+    <div class="badge">Open Source &middot; 100% Local</div>
+    <h1>Your voice,<br><em>your device.</em></h1>
+    <p>Private speech-to-text for macOS and iOS. Powered by OpenAI Whisper running entirely on-device with Metal GPU acceleration. No cloud. No subscription. No data leaves your machine.</p>
+    <div class="cta">
+      <a href="https://github.com/stonedMoose/iWhisperer/releases" class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12l-4.5-4.5L4.91 6.09 7.25 8.43V1h1.5v7.43l2.34-2.34L12.5 7.5z"/><path d="M13 11v2.5H3V11H1.5v2.5A1.5 1.5 0 003 15h10a1.5 1.5 0 001.5-1.5V11z"/></svg>
+        Download
+      </a>
+      <a href="https://github.com/stonedMoose/iWhisperer" class="btn btn-secondary" target="_blank">
+        View Source
+      </a>
+    </div>
+    <div class="platforms">
+      <div class="platform-tag">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83"/><path d="M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11"/></svg>
+        macOS 14+
+      </div>
+      <div class="platform-tag">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 1h-8A2.5 2.5 0 005 3.5v17A2.5 2.5 0 007.5 23h8a2.5 2.5 0 002.5-2.5v-17A2.5 2.5 0 0015.5 1zm-4 21c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4.5-4H7V4h9v14z"/></svg>
+        iOS 17+
+      </div>
+      <div class="platform-tag">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        Metal GPU
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features">
+    <h2>Features</h2>
+    <p class="subtitle">Everything runs on your hardware. Models download once, then work entirely offline.</p>
+    <div class="features">
+      <div class="feature">
+        <div class="icon-wrap purple">&#127908;</div>
+        <h3>Real-Time Streaming</h3>
+        <p>Text appears as you speak with word-level stability detection. No waiting for silence — your words flow directly into any text field.</p>
+      </div>
+      <div class="feature">
+        <div class="icon-wrap teal">&#128101;</div>
+        <h3>Meeting Transcription</h3>
+        <p>Record entire meetings with automatic speaker diarization. Each speaker is identified and labeled in the final transcript.</p>
+      </div>
+      <div class="feature">
+        <div class="icon-wrap orange">&#9889;</div>
+        <h3>Metal GPU Acceleration</h3>
+        <p>whisper.cpp runs natively on Apple Silicon via Metal, delivering fast inference without sending audio to any server.</p>
+      </div>
+      <div class="feature">
+        <div class="icon-wrap blue">&#128274;</div>
+        <h3>Completely Private</h3>
+        <p>Zero network requests for transcription. Your audio is processed locally and never recorded, uploaded, or stored by third parties.</p>
+      </div>
+      <div class="feature">
+        <div class="icon-wrap pink">&#10024;</div>
+        <h3>AI Transcript Refinement</h3>
+        <p>Optionally refine meeting transcripts with OpenAI, Anthropic, or Claude Code CLI. Identify speakers by name and fix errors.</p>
+      </div>
+      <div class="feature">
+        <div class="icon-wrap green">&#127760;</div>
+        <h3>6 Languages</h3>
+        <p>Interface available in English, French, Spanish, Chinese, Portuguese, and German. Whisper transcribes 99 spoken languages.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="how-it-works">
+    <h2>How It Works</h2>
+    <p class="subtitle">Three steps, no accounts, no cloud dependencies.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <h3>Capture Audio</h3>
+          <p>AVAudioEngine records at 16 kHz directly from your microphone. On macOS, hold a global hotkey; on iOS, tap the record button.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <h3>Local Inference</h3>
+          <p>whisper.cpp processes audio entirely on-device using Metal GPU. Choose from base, small, medium, or large models depending on your accuracy/speed needs.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <h3>Output Text</h3>
+          <p>On macOS, text is injected directly at your cursor position in any app via CGEvent. On iOS, text is copied to clipboard or saved to your history.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Compare -->
+  <section id="compare">
+    <h2>Two Apps, One Repo</h2>
+    <p class="subtitle">MacWhisperer for your desktop, iWhisperer for your pocket. Same engine, tailored for each platform.</p>
+    <table class="compare">
+      <thead>
+        <tr>
+          <th></th>
+          <th>MacWhisperer</th>
+          <th>iWhisperer</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Menu bar app</td>
+          <td class="check">&#10003;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td>Global hotkey (hold to speak)</td>
+          <td class="check">&#10003;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td>Text injection at cursor</td>
+          <td class="check">&#10003;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td>Streaming transcription</td>
+          <td class="check">&#10003;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td>Meeting recording + diarization</td>
+          <td class="check">&#10003;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td>LLM transcript refinement</td>
+          <td class="check">&#10003;</td>
+          <td class="dash">&mdash;</td>
+        </tr>
+        <tr>
+          <td>Transcription history (SwiftData)</td>
+          <td class="dash">&mdash;</td>
+          <td class="check">&#10003;</td>
+        </tr>
+        <tr>
+          <td>Live Activity + Dynamic Island</td>
+          <td class="dash">&mdash;</td>
+          <td class="check">&#10003;</td>
+        </tr>
+        <tr>
+          <td>Siri Shortcuts / Action Button</td>
+          <td class="dash">&mdash;</td>
+          <td class="check">&#10003;</td>
+        </tr>
+        <tr>
+          <td>Onboarding flow</td>
+          <td class="check">&#10003;</td>
+          <td class="check">&#10003;</td>
+        </tr>
+        <tr>
+          <td>Metal GPU acceleration</td>
+          <td class="check">&#10003;</td>
+          <td class="check">&#10003;</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Privacy -->
+  <section>
+    <div class="privacy-banner">
+      <h2>Privacy First</h2>
+      <p>Whisperer was built on one principle: your voice data should never leave your device.</p>
+      <div class="privacy-points">
+        <div class="privacy-point"><span class="check-icon">&#10003;</span> No accounts required</div>
+        <div class="privacy-point"><span class="check-icon">&#10003;</span> No audio uploads</div>
+        <div class="privacy-point"><span class="check-icon">&#10003;</span> No telemetry</div>
+        <div class="privacy-point"><span class="check-icon">&#10003;</span> Open source</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Get Started -->
+  <section style="text-align: center;">
+    <h2>Get Started</h2>
+    <p class="subtitle" style="margin: 12px auto 32px;">Clone the repo, build whisper.cpp, and run. That's it.</p>
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 32px; max-width: 600px; margin: 0 auto; text-align: left; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; line-height: 2; color: var(--text-muted); overflow-x: auto;">
+      <span style="color: var(--accent2);">$</span> git clone https://github.com/stonedMoose/iWhisperer.git<br>
+      <span style="color: var(--accent2);">$</span> <span style="color: var(--text-muted);">cd</span> iWhisperer/Whisperer<br>
+      <span style="color: var(--accent2);">$</span> bash scripts/build-whisper.sh<br>
+      <span style="color: var(--accent2);">$</span> swift run MacWhisperer
+    </div>
+    <div style="margin-top: 32px;">
+      <a href="https://github.com/stonedMoose/iWhisperer" class="btn btn-primary" target="_blank">
+        View on GitHub
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      Made by <a href="https://github.com/stonedMoose">Julien Lhermite</a> &middot;
+      <a href="https://github.com/stonedMoose/iWhisperer">Source Code</a> &middot;
+      Powered by <a href="https://github.com/ggerganov/whisper.cpp">whisper.cpp</a>
+    </p>
+  </footer>
+
+</body>
+</html>
