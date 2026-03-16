@@ -92,10 +92,14 @@ final class AppState {
     }
 
     private func startPermissionPolling() {
+        permissionPollTask?.cancel()
+        permissionPollTask = nil
+
         guard !micPermissionGranted || !accessibilityPermissionGranted else { return }
 
         permissionPollTask = Task { [weak self] in
-            while !Task.isCancelled {
+            // Poll up to 30 times (~60 seconds) then stop to avoid infinite loop
+            for _ in 0..<30 {
                 try? await Task.sleep(for: .seconds(2))
                 guard let self, !Task.isCancelled else { return }
 
@@ -122,6 +126,22 @@ final class AppState {
     func recheckPermissions() {
         micPermissionGranted = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
         accessibilityPermissionGranted = TextInjector.hasAccessibilityPermission
+
+        // Restart polling if permissions are still missing
+        if !micPermissionGranted || !accessibilityPermissionGranted {
+            startPermissionPolling()
+        } else {
+            permissionPollTask?.cancel()
+            permissionPollTask = nil
+        }
+    }
+
+    /// Cleanly release whisper.cpp resources before app termination.
+    /// This prevents a race condition where exit() triggers C++ static
+    /// destructors (ggml_metal_device_free) while a background thread is
+    /// still initializing Metal resource sets, causing ggml_abort.
+    func prepareForTermination() async {
+        await whisperEngine.unloadModel()
     }
 
     func relaunch() {

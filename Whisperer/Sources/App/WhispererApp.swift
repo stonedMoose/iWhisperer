@@ -130,7 +130,10 @@ struct MacWhispererApp: App {
             Divider()
 
             Button(L10n.quitWhisperer) {
-                NSApplication.shared.terminate(nil)
+                Task {
+                    await appState.prepareForTermination()
+                    NSApplication.shared.terminate(nil)
+                }
             }
             .keyboardShortcut("q", modifiers: .command)
         } label: {

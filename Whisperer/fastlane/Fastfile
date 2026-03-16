@@ -65,12 +65,21 @@ platform :mac do
 
     File.delete(DMG_OUTPUT) if File.exist?(DMG_OUTPUT)
 
+    # Stage .app + Applications symlink for drag-to-install layout
+    staging = File.join(PROJECT_DIR, ".build", "dmg-staging")
+    FileUtils.rm_rf(staging)
+    FileUtils.mkdir_p(staging)
+    FileUtils.cp_r(APP_BUNDLE, staging)
+    File.symlink("/Applications", File.join(staging, "Applications"))
+
     sh(
       "hdiutil create -volname '#{APP_NAME}' " \
-      "-srcfolder '#{APP_BUNDLE}' " \
+      "-srcfolder '#{staging}' " \
       "-ov -format UDZO " \
       "'#{DMG_OUTPUT}'"
     )
+
+    FileUtils.rm_rf(staging)
 
     UI.success("DMG created at #{DMG_OUTPUT}")
   end

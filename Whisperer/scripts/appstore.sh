@@ -18,7 +18,7 @@ APP_NAME="MacWhisperer"
 BUILD_DIR="$PROJECT_DIR/.build/release"
 APP_BUNDLE="$PROJECT_DIR/$APP_NAME.app"
 PKG_OUTPUT="$PROJECT_DIR/$APP_NAME.pkg"
-ENTITLEMENTS="$PROJECT_DIR/MacWhisperer.entitlements"
+ENTITLEMENTS="$PROJECT_DIR/MacWhisperer.appstore.entitlements"
 
 # Signing identities
 # "Apple Distribution" replaces the old "3rd Party Mac Developer Application" since Xcode 11
@@ -26,9 +26,8 @@ APP_SIGNING_IDENTITY="Apple Distribution: Julien Lhermite (3AKV63VNZX)"
 # "Mac Installer Distribution" is needed for .pkg — create at developer.apple.com/account/resources/certificates
 INSTALLER_SIGNING_IDENTITY="3rd Party Mac Developer Installer: Julien Lhermite (3AKV63VNZX)"
 
-# Provisioning profile — install via Xcode or manually in ~/Library/MobileDevice/Provisioning Profiles/
-# Set PROVISIONING_PROFILE_PATH env var or place it here:
-PROVISIONING_PROFILE="${PROVISIONING_PROFILE_PATH:-}"
+# Provisioning profile
+PROVISIONING_PROFILE="${PROVISIONING_PROFILE_PATH:-$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/Mac_Distribution.provisionprofile}"
 
 UPLOAD=false
 if [[ "${1:-}" == "--upload" ]]; then
@@ -49,6 +48,11 @@ mkdir -p "$APP_BUNDLE/Contents/MacOS"
 mkdir -p "$APP_BUNDLE/Contents/Resources"
 
 cp "$BUILD_DIR/$APP_NAME" "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
+
+# Copy SPM resource bundles (e.g. KeyboardShortcuts localization)
+echo "Copying SPM resource bundles..."
+find "$BUILD_DIR" -name '*.bundle' -maxdepth 1 -exec cp -R {} "$APP_BUNDLE/Contents/Resources/" \;
+
 cp "$PROJECT_DIR/Sources/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 
 # Enrich Info.plist with required App Store fields
@@ -58,8 +62,9 @@ PLIST="$APP_BUNDLE/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Add :CFBundleName string $APP_NAME" "$PLIST" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Add :CFBundlePackageType string APPL" "$PLIST" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 0.1.0" "$PLIST" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1" "$PLIST" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Add :CFBundleVersion string ${BUILD_NUMBER:-2}" "$PLIST" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Add :LSMinimumSystemVersion string 14.0" "$PLIST" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Add :LSApplicationCategoryType string public.app-category.productivity" "$PLIST" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Add :CFBundleSupportedPlatforms array" "$PLIST" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Add :CFBundleSupportedPlatforms:0 string MacOSX" "$PLIST" 2>/dev/null || true
 
@@ -83,11 +88,26 @@ rm -rf "$(dirname "$ICONSET_DIR")"
 /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string AppIcon" "$PLIST" 2>/dev/null || \
 /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile AppIcon" "$PLIST"
 
-# Embed provisioning profile if provided
+# Embed provisioning profile if provided (strip quarantine attribute)
 if [[ -n "$PROVISIONING_PROFILE" && -f "$PROVISIONING_PROFILE" ]]; then
     echo "Embedding provisioning profile..."
     cp "$PROVISIONING_PROFILE" "$APP_BUNDLE/Contents/embedded.provisionprofile"
+    xattr -cr "$APP_BUNDLE/Contents/embedded.provisionprofile"
 fi
+
+# Compile asset catalog to .car (required by App Store)
+echo "Compiling asset catalog..."
+xcrun actool "$PROJECT_DIR/Resources/Assets.xcassets" \
+    --compile "$APP_BUNDLE/Contents/Resources" \
+    --platform macosx \
+    --minimum-deployment-target 14.0 \
+    --app-icon AppIcon \
+    --output-partial-info-plist /dev/null 2>/dev/null || echo "Warning: actool failed, continuing..."
+
+# Remove .DS_Store, resource forks, and quarantine attributes
+find "$APP_BUNDLE" -name '.DS_Store' -delete 2>/dev/null || true
+find "$APP_BUNDLE" -name '._*' -delete 2>/dev/null || true
+xattr -cr "$APP_BUNDLE"
 
 # ── Step 3: Sign for App Store ───────────────────────────────────────────
 echo ""
@@ -105,10 +125,17 @@ codesign --verify --verbose=2 "$APP_BUNDLE"
 echo ""
 echo "═══ Step 4: Building .pkg installer ═══"
 rm -f "$PKG_OUTPUT"
+
+# Copy .app via ditto to a temp dir to strip extended attributes / resource forks
+CLEAN_DIR=$(mktemp -d)
+ditto --noextattr --norsrc "$APP_BUNDLE" "$CLEAN_DIR/$APP_NAME.app"
+
 productbuild \
-    --component "$APP_BUNDLE" /Applications \
+    --component "$CLEAN_DIR/$APP_NAME.app" /Applications \
     --sign "$INSTALLER_SIGNING_IDENTITY" \
     "$PKG_OUTPUT"
+
+rm -rf "$CLEAN_DIR"
 
 echo "Verifying .pkg..."
 pkgutil --check-signature "$PKG_OUTPUT"
@@ -131,7 +158,7 @@ if $UPLOAD; then
         xcrun altool --upload-package "$PKG_OUTPUT" \
             --type macos \
             --bundle-id "fr.moose.Whisperer" \
-            --bundle-version 1 \
+            --bundle-version "${BUILD_NUMBER:-2}" \
             --bundle-short-version-string "0.1.0" \
             --apiKey "$KEY_ID" \
             --apiIssuer "$ISSUER_ID" \
