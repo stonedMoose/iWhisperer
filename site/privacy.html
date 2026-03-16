@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Whisperer</title>
+  <meta name="description" content="Privacy policy for Whisperer (MacWhisperer and iWhisperer). Your voice data never leaves your device.">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg-card: #12121a;
+      --text: #e8e8ed;
+      --text-muted: #8888a0;
+      --accent: #6c5ce7;
+      --accent2: #00cec9;
+      --border: rgba(255, 255, 255, 0.06);
+      --radius: 16px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 30% 20%, rgba(108, 92, 231, 0.08) 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 80%, rgba(0, 206, 201, 0.05) 0%, transparent 50%);
+      z-index: -1;
+    }
+
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(10, 10, 15, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+    }
+    nav .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 18px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    nav .logo img { width: 28px; height: 28px; border-radius: 6px; }
+    nav .links { display: flex; gap: 24px; align-items: center; }
+    nav .links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    nav .links a:hover { color: var(--text); }
+
+    .content {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 120px 24px 80px;
+    }
+
+    .content h1 {
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+
+    .content .last-updated {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 48px;
+    }
+
+    .content h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-top: 48px;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .content p, .content li {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .content ul {
+      padding-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    .content li {
+      margin-bottom: 8px;
+    }
+
+    .content a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .content a:hover { text-decoration: underline; }
+
+    .highlight-box {
+      padding: 24px 28px;
+      background: linear-gradient(135deg, rgba(108, 92, 231, 0.08), rgba(0, 206, 201, 0.06));
+      border: 1px solid rgba(108, 92, 231, 0.15);
+      border-radius: var(--radius);
+      margin: 32px 0;
+    }
+    .highlight-box p {
+      color: var(--text);
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 0;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 32px 0;
+    }
+    .summary-item {
+      padding: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      text-align: center;
+    }
+    .summary-item .icon { font-size: 28px; margin-bottom: 8px; }
+    .summary-item .label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .summary-item .desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      margin-bottom: 0;
+    }
+
+    footer {
+      padding: 48px 24px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      margin-top: 80px;
+    }
+    footer p { color: var(--text-muted); font-size: 13px; }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 640px) {
+      nav { padding: 12px 16px; }
+      .content { padding: 100px 16px 60px; }
+      .content h1 { font-size: 30px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="index.html" class="logo">
+      <img src="assets/icon.png" alt="Whisperer">
+      Whisperer
+    </a>
+    <div class="links">
+      <a href="index.html">Home</a>
+      <a href="tutorial.html">Tutorial</a>
+    </div>
+  </nav>
+
+  <div class="content">
+    <h1>Privacy Policy</h1>
+    <p class="last-updated">Last updated: March 16, 2026</p>
+
+    <div class="highlight-box">
+      <p>Whisperer is designed from the ground up to keep your data private. All speech processing happens entirely on your device. We do not collect, store, or transmit any personal data.</p>
+    </div>
+
+    <div class="summary-grid">
+      <div class="summary-item">
+        <div class="icon">&#128274;</div>
+        <div class="label">No Data Collection</div>
+        <p class="desc">Zero personal data collected</p>
+      </div>
+      <div class="summary-item">
+        <div class="icon">&#127758;</div>
+        <div class="label">No Network Requests</div>
+        <p class="desc">Audio never leaves your device</p>
+      </div>
+      <div class="summary-item">
+        <div class="icon">&#128683;</div>
+        <div class="label">No Tracking</div>
+        <p class="desc">No analytics or telemetry</p>
+      </div>
+      <div class="summary-item">
+        <div class="icon">&#128100;</div>
+        <div class="label">No Accounts</div>
+        <p class="desc">No sign-up or login required</p>
+      </div>
+    </div>
+
+    <h2>What Data Whisperer Processes</h2>
+    <p>Whisperer processes the following data, all of which remains on your device:</p>
+    <ul>
+      <li><strong>Microphone audio</strong> — Captured in real time at 16 kHz for speech-to-text conversion. Audio is processed in memory and is never written to disk or transmitted over the network.</li>
+      <li><strong>Transcription text</strong> — The output of the speech recognition model. On macOS, text is injected at the cursor position or saved locally for meeting transcripts. On iOS, text is stored in a local SwiftData database on your device.</li>
+      <li><strong>App preferences</strong> — Settings such as language selection, model choice, and shortcut configuration are stored locally via UserDefaults.</li>
+    </ul>
+
+    <h2>On-Device Processing</h2>
+    <p>All speech recognition is performed locally using <a href="https://github.com/ggerganov/whisper.cpp">whisper.cpp</a>, an open-source C/C++ implementation of OpenAI's Whisper model. The model runs on your device's CPU and GPU (via Metal acceleration). No audio data is sent to any server for processing.</p>
+
+    <h2>Optional AI Refinement</h2>
+    <p>MacWhisperer includes an optional AI transcript refinement feature. When enabled by the user, meeting transcripts may be sent to a third-party AI provider (OpenAI, Anthropic, or a local Claude Code CLI instance) for post-processing. This feature is:</p>
+    <ul>
+      <li>Disabled by default</li>
+      <li>Requires explicit user opt-in</li>
+      <li>Only sends transcript text (not audio)</li>
+      <li>Can be configured to use a fully local provider (Claude Code CLI)</li>
+    </ul>
+    <p>When using a cloud-based AI provider, the transcript text is subject to that provider's privacy policy.</p>
+
+    <h2>Model Downloads</h2>
+    <p>When you first select a Whisper model, the app downloads the model file from Hugging Face. This is the only network request the app makes for core functionality. After download, the model is cached locally and no further network access is required.</p>
+
+    <h2>Permissions</h2>
+    <p>Whisperer requests the following system permissions:</p>
+    <ul>
+      <li><strong>Microphone</strong> — Required to capture audio for transcription.</li>
+      <li><strong>Accessibility</strong> (macOS only) — Required to inject transcribed text at the cursor position in any application.</li>
+    </ul>
+    <p>These permissions are used solely for the stated purposes and can be revoked at any time in System Settings.</p>
+
+    <h2>Third-Party Services</h2>
+    <p>Whisperer does not integrate any third-party analytics, advertising, or tracking services. There are no SDKs that collect user data. The app does not contain ads.</p>
+
+    <h2>Children's Privacy</h2>
+    <p>Whisperer does not knowingly collect any personal information from anyone, including children under 13.</p>
+
+    <h2>Open Source</h2>
+    <p>Whisperer is fully open source. You can audit the entire codebase to verify these privacy claims at <a href="https://github.com/stonedMoose/iWhisperer">github.com/stonedMoose/iWhisperer</a>.</p>
+
+    <h2>Changes to This Policy</h2>
+    <p>If this privacy policy is updated, the changes will be reflected on this page with an updated "last updated" date. Since the app does not collect contact information, we cannot notify users directly.</p>
+
+    <h2>Contact</h2>
+    <p>If you have questions about this privacy policy, you can open an issue on the <a href="https://github.com/stonedMoose/iWhisperer/issues">GitHub repository</a>.</p>
+  </div>
+
+  <footer>
+    <p>
+      Made by <a href="https://github.com/stonedMoose">Julien Lhermite</a> &middot;
+      <a href="https://github.com/stonedMoose/iWhisperer">Source Code</a> &middot;
+      Powered by <a href="https://github.com/ggerganov/whisper.cpp">whisper.cpp</a>
+    </p>
+  </footer>
+
+</body>
+</html>
