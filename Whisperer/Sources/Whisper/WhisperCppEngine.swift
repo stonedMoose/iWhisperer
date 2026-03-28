@@ -43,8 +43,9 @@ actor WhisperCppEngine {
     }
 
     /// Transcribe audio samples (16kHz Float32) to text.
-    func transcribe(samples: [Float], language: String) -> String {
-        guard let ctx else { return "" }
+    /// Throws on failure or timeout (default 120s).
+    func transcribe(samples: [Float], language: String, timeout: Duration = .seconds(120)) async throws -> String {
+        guard let ctx else { throw WhisperCppError.notLoaded }
 
         let maxThreads = max(1, min(8, ProcessInfo.processInfo.processorCount - 2))
         var params = whisper_full_default_params(WHISPER_SAMPLING_BEAM_SEARCH)
@@ -60,25 +61,27 @@ actor WhisperCppEngine {
         params.no_speech_thold = 0.6
 
         let lang = language == "auto" ? nil : language
-        let result: Int32 = lang.withOptionalCString { langPtr in
-            params.language = langPtr
-            return samples.withUnsafeBufferPointer { samplesPtr in
-                whisper_full(ctx, params, samplesPtr.baseAddress, Int32(samplesPtr.count))
+        let result: Int32 = try await withThrowingTimeout(timeout) {
+            lang.withOptionalCString { langPtr in
+                params.language = langPtr
+                return samples.withUnsafeBufferPointer { samplesPtr in
+                    whisper_full(ctx, params, samplesPtr.baseAddress, Int32(samplesPtr.count))
+                }
             }
         }
 
         guard result == 0 else {
-            Log.whisper.error("whisper_full failed with code \(result)")
-            return ""
+            throw WhisperCppError.inferenceFailed(result)
         }
 
         return collectSegmentText()
     }
 
     /// Transcribe a sliding window of audio, returning text and token IDs for prompt context.
+    /// Throws on failure or timeout (default 30s for streaming windows).
     func transcribeWindow(samples: [Float], language: String,
-                          promptTokens: [whisper_token]) -> (text: String, tokens: [whisper_token]) {
-        guard let ctx else { return ("", []) }
+                          promptTokens: [whisper_token], timeout: Duration = .seconds(30)) async throws -> (text: String, tokens: [whisper_token]) {
+        guard let ctx else { throw WhisperCppError.notLoaded }
 
         let maxThreads = max(1, min(8, ProcessInfo.processInfo.processorCount - 2))
         var params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY)
@@ -100,24 +103,25 @@ actor WhisperCppEngine {
             ? Array(promptTokens.suffix(maxPromptTokens))
             : promptTokens
 
-        let result: Int32 = lang.withOptionalCString { langPtr in
-            params.language = langPtr
+        let result: Int32 = try await withThrowingTimeout(timeout) {
+            lang.withOptionalCString { langPtr in
+                params.language = langPtr
 
-            // Feed prompt tokens for cross-chunk coherence
-            return cappedTokens.withUnsafeBufferPointer { promptPtr in
-                if !cappedTokens.isEmpty {
-                    params.prompt_tokens = promptPtr.baseAddress
-                    params.prompt_n_tokens = Int32(promptPtr.count)
-                }
-                return samples.withUnsafeBufferPointer { samplesPtr in
-                    whisper_full(ctx, params, samplesPtr.baseAddress, Int32(samplesPtr.count))
+                // Feed prompt tokens for cross-chunk coherence
+                return cappedTokens.withUnsafeBufferPointer { promptPtr in
+                    if !cappedTokens.isEmpty {
+                        params.prompt_tokens = promptPtr.baseAddress
+                        params.prompt_n_tokens = Int32(promptPtr.count)
+                    }
+                    return samples.withUnsafeBufferPointer { samplesPtr in
+                        whisper_full(ctx, params, samplesPtr.baseAddress, Int32(samplesPtr.count))
+                    }
                 }
             }
         }
 
         guard result == 0 else {
-            Log.whisper.error("whisper_full (window) failed with code \(result)")
-            return ("", [])
+            throw WhisperCppError.inferenceFailed(result)
         }
 
         let text = collectSegmentText()
@@ -126,8 +130,8 @@ actor WhisperCppEngine {
     }
 
     /// Transcribe audio and return segments with timestamps for diarization merging.
-    func transcribeWithSegments(samples: [Float], language: String?) -> [(start: Double, end: Double, text: String)] {
-        guard let ctx else { return [] }
+    func transcribeWithSegments(samples: [Float], language: String?, timeout: Duration = .seconds(120)) async throws -> [(start: Double, end: Double, text: String)] {
+        guard let ctx else { throw WhisperCppError.notLoaded }
 
         let maxThreads = max(1, min(8, ProcessInfo.processInfo.processorCount - 2))
         var params = whisper_full_default_params(WHISPER_SAMPLING_BEAM_SEARCH)
@@ -142,16 +146,17 @@ actor WhisperCppEngine {
         params.n_threads = Int32(maxThreads)
         params.no_speech_thold = 0.6
 
-        let result: Int32 = language.withOptionalCString { langPtr in
-            params.language = langPtr
-            return samples.withUnsafeBufferPointer { samplesPtr in
-                whisper_full(ctx, params, samplesPtr.baseAddress, Int32(samplesPtr.count))
+        let result: Int32 = try await withThrowingTimeout(timeout) {
+            language.withOptionalCString { langPtr in
+                params.language = langPtr
+                return samples.withUnsafeBufferPointer { samplesPtr in
+                    whisper_full(ctx, params, samplesPtr.baseAddress, Int32(samplesPtr.count))
+                }
             }
         }
 
         guard result == 0 else {
-            Log.whisper.error("whisper_full (segments) failed with code \(result)")
-            return []
+            throw WhisperCppError.inferenceFailed(result)
         }
 
         var segments: [(start: Double, end: Double, text: String)] = []
@@ -224,10 +229,30 @@ private extension Optional where Wrapped == String {
 
 enum WhisperCppError: LocalizedError {
     case modelLoadFailed(String)
+    case notLoaded
+    case inferenceFailed(Int32)
+    case timedOut
 
     var errorDescription: String? {
         switch self {
         case .modelLoadFailed(let path): "Failed to load whisper model at: \(path)"
+        case .notLoaded: "Whisper model is not loaded"
+        case .inferenceFailed(let code): "Transcription failed (error code \(code))"
+        case .timedOut: "Transcription timed out"
         }
+    }
+}
+
+/// Run a synchronous closure with a timeout, throwing `.timedOut` if exceeded.
+private func withThrowingTimeout<T: Sendable>(_ duration: Duration, operation: @escaping @Sendable () -> T) async throws -> T {
+    try await withThrowingTaskGroup(of: T.self) { group in
+        group.addTask { operation() }
+        group.addTask {
+            try await Task.sleep(for: duration)
+            throw WhisperCppError.timedOut
+        }
+        let result = try await group.next()!
+        group.cancelAll()
+        return result
     }
 }

@@ -298,18 +298,25 @@ final class AppState {
         isProcessing = true
         recordingIndicator.showProcessing()
 
-        let language = settingsStore.selectedLanguage
-        let text = await whisperEngine.transcribe(
-            samples: samples,
-            language: language == .auto ? "auto" : language.rawValue
-        )
-        Log.whisper.info("Transcription result: \(text, privacy: .private)")
-        if !text.isEmpty {
-            TextInjector.typeText(text)
+        defer {
+            isProcessing = false
+            recordingIndicator.hide()
         }
 
-        isProcessing = false
-        recordingIndicator.hide()
+        let language = settingsStore.selectedLanguage
+        do {
+            let text = try await whisperEngine.transcribe(
+                samples: samples,
+                language: language == .auto ? "auto" : language.rawValue
+            )
+            Log.whisper.info("Transcription result: \(text, privacy: .private)")
+            if !text.isEmpty {
+                TextInjector.typeText(text)
+            }
+        } catch {
+            Log.whisper.error("Transcription failed: \(error)")
+            showPermissionError("Transcription failed: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Streaming mode (sliding window + LocalAgreement)
@@ -352,11 +359,18 @@ final class AppState {
             let language = settingsStore.selectedLanguage
             let langStr = language == .auto ? "auto" : language.rawValue
 
-            let (text, tokens) = await whisperEngine.transcribeWindow(
-                samples: window,
-                language: langStr,
-                promptTokens: streamingPromptTokens
-            )
+            let text: String
+            let tokens: [Int32]
+            do {
+                (text, tokens) = try await whisperEngine.transcribeWindow(
+                    samples: window,
+                    language: langStr,
+                    promptTokens: streamingPromptTokens
+                )
+            } catch {
+                Log.whisper.error("Streaming transcription failed: \(error)")
+                continue
+            }
 
             guard !Task.isCancelled else { break }
 
@@ -404,30 +418,37 @@ final class AppState {
         isProcessing = true
         recordingIndicator.showProcessing()
 
+        defer {
+            streamingTypedWordCount = 0
+            streamingPreviousWords = []
+            streamingPromptTokens = []
+            isProcessing = false
+            recordingIndicator.hide()
+        }
+
         // Final full inference on all captured audio
         let language = settingsStore.selectedLanguage
         let langStr = language == .auto ? "auto" : language.rawValue
-        let finalText = await whisperEngine.transcribe(samples: samples, language: langStr)
-        let finalWords = Self.splitIntoWords(finalText)
+        do {
+            let finalText = try await whisperEngine.transcribe(samples: samples, language: langStr)
+            let finalWords = Self.splitIntoWords(finalText)
 
-        if finalWords.count > streamingTypedWordCount {
-            let remaining = Array(finalWords[streamingTypedWordCount...])
-            let prefix = streamingTypedWordCount == 0 ? "" : " "
-            let remainingText = prefix + remaining.joined(separator: " ")
-            if !remainingText.isEmpty {
-                Log.whisper.info("Streaming final: \(remainingText, privacy: .private)")
-                TextInjector.typeText(remainingText)
+            if finalWords.count > streamingTypedWordCount {
+                let remaining = Array(finalWords[streamingTypedWordCount...])
+                let prefix = streamingTypedWordCount == 0 ? "" : " "
+                let remainingText = prefix + remaining.joined(separator: " ")
+                if !remainingText.isEmpty {
+                    Log.whisper.info("Streaming final: \(remainingText, privacy: .private)")
+                    TextInjector.typeText(remainingText)
+                }
+            } else if streamingTypedWordCount == 0 && !finalText.isEmpty {
+                Log.whisper.info("Streaming fallback: \(finalText, privacy: .private)")
+                TextInjector.typeText(finalText)
             }
-        } else if streamingTypedWordCount == 0 && !finalText.isEmpty {
-            Log.whisper.info("Streaming fallback: \(finalText, privacy: .private)")
-            TextInjector.typeText(finalText)
+        } catch {
+            Log.whisper.error("Streaming final transcription failed: \(error)")
+            showPermissionError("Transcription failed: \(error.localizedDescription)")
         }
-
-        streamingTypedWordCount = 0
-        streamingPreviousWords = []
-        streamingPromptTokens = []
-        isProcessing = false
-        recordingIndicator.hide()
     }
 
     // MARK: - LocalAgreement helpers

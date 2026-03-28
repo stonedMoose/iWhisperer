@@ -85,7 +85,7 @@ final class MeetingRecorder {
             Array(buffer.bindMemory(to: Float.self))
         }
 
-        let transcriptionSegments = await engine.transcribeWithSegments(
+        let transcriptionSegments = try await engine.transcribeWithSegments(
             samples: samples,
             language: language == .auto ? nil : language.rawValue
         )

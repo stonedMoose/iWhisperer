@@ -6,8 +6,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 APP_NAME="MacWhisperer"
 BUILD_DIR="$PROJECT_DIR/.build/release"
-# Resolve symlink so find works without -L
-RESOLVED_BUILD_DIR="$(cd "$PROJECT_DIR/.build/release" && pwd -P)"
 APP_BUNDLE="$PROJECT_DIR/$APP_NAME.app"
 DMG_OUTPUT="$PROJECT_DIR/$APP_NAME.dmg"
 ENTITLEMENTS="$PROJECT_DIR/MacWhisperer.entitlements"
@@ -19,6 +17,9 @@ echo "Building whisper.cpp..."
 echo "Building release..."
 cd "$PROJECT_DIR"
 swift build -c release
+
+# Resolve symlink so find works without -L (must be after swift build creates the dir)
+RESOLVED_BUILD_DIR="$(cd "$PROJECT_DIR/.build/release" && pwd -P)"
 
 # Patch SPM's generated resource_bundle_accessor to also look in
 # Bundle.main.resourceURL (Contents/Resources/) which is where we place
@@ -60,7 +61,7 @@ cp "$PROJECT_DIR/Sources/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Add :CFBundleExecutable string $APP_NAME" "$APP_BUNDLE/Contents/Info.plist" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Add :CFBundleName string $APP_NAME" "$APP_BUNDLE/Contents/Info.plist" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Add :CFBundlePackageType string APPL" "$APP_BUNDLE/Contents/Info.plist" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 0.1.0" "$APP_BUNDLE/Contents/Info.plist" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0.0" "$APP_BUNDLE/Contents/Info.plist" 2>/dev/null || true
 
 # Generate app icon
 echo "Generating app icon..."
