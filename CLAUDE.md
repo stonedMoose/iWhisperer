@@ -20,12 +20,12 @@ cd Whisperer && bash scripts/build-whisper.sh      # macOS
 cd iWhisperer && bash Scripts/build-whisper-ios.sh  # iOS
 
 # Build & run
-npm run launch:mac          # swift run MacWhisperer
-npm run launch:ios          # xcodegen + build + open Xcode
+pnpm run launch:mac         # swift run MacWhisperer
+pnpm run launch:ios         # xcodegen + build + open Xcode
 
 # Distribution
-npm run distribute:mac      # Fastlane: build + DMG
-npm run release:mac         # Fastlane: build + notarize + DMG + GitHub release
+pnpm run distribute:mac     # Fastlane: build + DMG
+pnpm run release:mac        # Fastlane: build + notarize + DMG + GitHub release
 ```
 
 No test targets exist yet.
