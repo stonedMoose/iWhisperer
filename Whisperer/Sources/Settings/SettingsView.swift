@@ -6,6 +6,7 @@ import KeyboardShortcuts
 extension KeyboardShortcuts.Name {
     static let holdToRecord = Self("holdToRecord")
     static let meetingRecord = Self("meetingRecord")
+    static let cycleLanguage = Self("cycleLanguage")
 }
 
 struct SettingsView: View {
@@ -154,6 +155,17 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
 
                     KeyboardShortcuts.Recorder(for: .holdToRecord)
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Label(L10n.language, systemImage: "globe")
+                        .font(.headline)
+                    Text("Cycle through preferred languages")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    KeyboardShortcuts.Recorder(for: .cycleLanguage)
                 }
 
                 Divider()

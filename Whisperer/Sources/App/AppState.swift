@@ -193,6 +193,14 @@ final class AppState {
         }
     }
 
+    func cycleLanguage() {
+        let options: [WhisperLanguage] = [.auto] + settingsStore.preferredLanguages
+        guard options.count > 1 else { return }
+        let current = settingsStore.selectedLanguage
+        let idx = options.firstIndex(of: current) ?? -1
+        settingsStore.selectedLanguage = options[(idx + 1) % options.count]
+    }
+
     private func setupHotkey() {
         KeyboardShortcuts.onKeyDown(for: .holdToRecord) { [weak self] in
             Task { @MainActor in
@@ -207,6 +215,11 @@ final class AppState {
         KeyboardShortcuts.onKeyDown(for: .meetingRecord) { [weak self] in
             Task { @MainActor in
                 await self?.toggleMeetingRecording()
+            }
+        }
+        KeyboardShortcuts.onKeyDown(for: .cycleLanguage) { [weak self] in
+            Task { @MainActor in
+                self?.cycleLanguage()
             }
         }
     }
