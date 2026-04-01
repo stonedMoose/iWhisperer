@@ -141,7 +141,8 @@ struct MacWhispererApp: App {
                 isMeetingRecording: appState.isMeetingRecording,
                 isRecording: appState.isRecording,
                 isProcessing: appState.isProcessing,
-                isMeetingProcessing: appState.isMeetingProcessing
+                isMeetingProcessing: appState.isMeetingProcessing,
+                language: settingsStore.selectedLanguage
             )
         }
         .menuBarExtraStyle(.menu)
