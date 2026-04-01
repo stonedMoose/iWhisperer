@@ -133,10 +133,8 @@ enum WhisperLanguage: String, CaseIterable, Identifiable, Codable {
                 orientation: .horizontal, overlay: nil)
         case .arabic:
             return FlagPattern(
-                bands: [.init(color: NSColor(r:0,g:0,b:0), weight:1),
-                        .init(color:.white, weight:1),
-                        .init(color: NSColor(r:0,g:122,b:61), weight:1)],
-                orientation: .horizontal, overlay: nil)
+                bands: [.init(color: NSColor(r:0,g:122,b:61), weight:1)],  // pan-Arab green
+                orientation: .vertical, overlay: nil)
         case .portuguese:
             return FlagPattern(
                 bands: [.init(color: NSColor(r:0,g:102,b:0), weight:2),
@@ -170,7 +168,7 @@ enum WhisperLanguage: String, CaseIterable, Identifiable, Codable {
             return FlagPattern(
                 bands: [.init(color: NSColor(r:222,g:41,b:16), weight:1)],
                 orientation: .vertical,
-                overlay: .star(color: NSColor(r:255,g:217,b:0), cx:0.25, cy:0.72, r:0.22))
+                overlay: .star(color: NSColor(r:255,g:217,b:0), cx:0.25, cy:0.5, r:0.22))
 
         // ── Korean (white + yin-yang) ─────────────────────────────────────
         case .korean:
