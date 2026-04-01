@@ -11,6 +11,7 @@ final class MenuBarIconState {
     var isRecording = false { didSet { update() } }
     var isProcessing = false { didSet { update() } }
     var isMeetingProcessing = false { didSet { update() } }
+    var language: WhisperLanguage = .auto { didSet { rebuildImage() } }
 
     private(set) var image: NSImage
 
@@ -18,7 +19,7 @@ final class MenuBarIconState {
     private var pulseTimer: Timer?
 
     init() {
-        self.image = Self.renderIcon(dotColor: nil)
+        self.image = Self.renderIcon(dotColor: nil, language: .auto)
     }
 
     private var shouldPulse: Bool {
@@ -45,64 +46,160 @@ final class MenuBarIconState {
         } else {
             dotColor = nil
         }
-        image = Self.renderIcon(dotColor: dotColor)
+        image = Self.renderIcon(dotColor: dotColor, language: language)
     }
 
-    private static func renderIcon(dotColor: NSColor?) -> NSImage {
+    private static func renderIcon(dotColor: NSColor?, language: WhisperLanguage) -> NSImage {
         let size = NSSize(width: 18, height: 18)
         let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
         guard let symbol = NSImage(systemSymbolName: "waveform", accessibilityDescription: "Whisperer")?
-            .withSymbolConfiguration(config) else {
-            return NSImage(size: size)
-        }
+            .withSymbolConfiguration(config) else { return NSImage(size: size) }
         symbol.isTemplate = true
         let symbolSize = symbol.size
+        let sx = (size.width - symbolSize.width) / 2
+        let sy = (size.height - symbolSize.height) / 2
+        let symbolRect = CGRect(x: sx, y: sy, width: symbolSize.width, height: symbolSize.height)
 
-        guard let dotColor else {
-            // No dot — return as template so system handles tinting
-            let img = NSImage(size: size, flipped: false) { rect in
-                let x = (rect.width - symbolSize.width) / 2
-                let y = (rect.height - symbolSize.height) / 2
-                symbol.draw(in: NSRect(x: x, y: y, width: symbolSize.width, height: symbolSize.height))
-                return true
+        // No flag pattern (auto-detect) — use existing template rendering
+        guard let flagPattern = language.flagPattern else {
+            guard let dotColor else {
+                let img = NSImage(size: size, flipped: false) { _ in
+                    symbol.draw(in: NSRect(x: sx, y: sy, width: symbolSize.width, height: symbolSize.height))
+                    return true
+                }
+                img.isTemplate = true
+                return img
             }
-            img.isTemplate = true
-            return img
+            return renderWithDot(symbol: symbol, symbolRect: symbolRect, dotColor: dotColor, size: size)
         }
 
-        // Composite: tinted waveform + colored dot.
-        // Can't use isTemplate=true (dot needs its real color), so we tint
-        // the waveform via Core Graphics sourceAtop compositing.
+        // Flag mode: paint flag through waveform mask using sourceAtop
         let img = NSImage(size: size, flipped: false) { rect in
             guard let ctx = NSGraphicsContext.current?.cgContext else { return false }
 
-            // Draw waveform (template renders as black alpha mask)
-            let x = (rect.width - symbolSize.width) / 2
-            let y = (rect.height - symbolSize.height) / 2
-            let symbolRect = NSRect(x: x, y: y, width: symbolSize.width, height: symbolSize.height)
-            symbol.draw(in: symbolRect)
+            // 1. Draw waveform to establish destination alpha
+            symbol.draw(in: NSRect(x: sx, y: sy, width: symbolSize.width, height: symbolSize.height))
 
-            // Tint waveform pixels to menu bar foreground color (white)
+            // 2. sourceAtop: subsequent draws only affect pixels where waveform exists
             ctx.setBlendMode(.sourceAtop)
-            ctx.setFillColor(NSColor.white.cgColor)
-            ctx.fill(symbolRect)
+            Self.drawFlagBands(flagPattern, in: symbolRect, ctx: ctx)
+            if let overlay = flagPattern.overlay {
+                Self.drawFlagOverlay(overlay, in: symbolRect, ctx: ctx)
+            }
 
-            // Draw dot with normal blending
+            // 3. Normal blend for the state dot
             ctx.setBlendMode(.normal)
-            let dotSize: CGFloat = 6
-            let dotRect = CGRect(
-                x: rect.width - dotSize,
-                y: 0,
-                width: dotSize,
-                height: dotSize
-            )
-            ctx.setFillColor(dotColor.cgColor)
-            ctx.fillEllipse(in: dotRect)
-
+            if let dotColor {
+                let dotSize: CGFloat = 6
+                ctx.setFillColor(dotColor.cgColor)
+                ctx.fillEllipse(in: CGRect(x: rect.width - dotSize, y: 0, width: dotSize, height: dotSize))
+            }
             return true
         }
         img.isTemplate = false
         return img
+    }
+
+    /// Template-style rendering with dot (used for auto-detect + active state).
+    private static func renderWithDot(symbol: NSImage, symbolRect: CGRect, dotColor: NSColor, size: NSSize) -> NSImage {
+        let img = NSImage(size: size, flipped: false) { rect in
+            guard let ctx = NSGraphicsContext.current?.cgContext else { return false }
+            symbol.draw(in: NSRect(origin: symbolRect.origin, size: symbolRect.size))
+            ctx.setBlendMode(.sourceAtop)
+            ctx.setFillColor(NSColor.white.cgColor)
+            ctx.fill(symbolRect)
+            ctx.setBlendMode(.normal)
+            let dotSize: CGFloat = 6
+            ctx.setFillColor(dotColor.cgColor)
+            ctx.fillEllipse(in: CGRect(x: rect.width - dotSize, y: 0, width: dotSize, height: dotSize))
+            return true
+        }
+        img.isTemplate = false
+        return img
+    }
+
+    private static func drawFlagBands(_ pattern: FlagPattern, in rect: CGRect, ctx: CGContext) {
+        let total = pattern.bands.reduce(0) { $0 + $1.weight }
+        switch pattern.orientation {
+        case .vertical:
+            var x = rect.minX
+            for band in pattern.bands {
+                let w = rect.width * (band.weight / total)
+                ctx.setFillColor(band.color.cgColor)
+                ctx.fill(CGRect(x: x, y: rect.minY, width: w, height: rect.height))
+                x += w
+            }
+        case .horizontal:
+            // bands[0] = visual top; CG y=0 is bottom, so draw top-down from maxY
+            var currentY = rect.maxY
+            for band in pattern.bands {
+                let h = rect.height * (band.weight / total)
+                ctx.setFillColor(band.color.cgColor)
+                ctx.fill(CGRect(x: rect.minX, y: currentY - h, width: rect.width, height: h))
+                currentY -= h
+            }
+        }
+    }
+
+    private static func drawFlagOverlay(_ overlay: FlagPattern.Overlay, in rect: CGRect, ctx: CGContext) {
+        switch overlay {
+        case .circle(let color, let cx, let cy, let r):
+            ctx.setFillColor(color.cgColor)
+            let cr = r * min(rect.width, rect.height)
+            ctx.fillEllipse(in: CGRect(
+                x: rect.minX + cx * rect.width - cr,
+                y: rect.minY + cy * rect.height - cr,
+                width: cr * 2, height: cr * 2))
+
+        case .cross(let h, let v):
+            let thick = rect.width * 0.22
+            // White backing for fimbriation (Union Jack style)
+            let whiteFactor: CGFloat = 1.6
+            ctx.setFillColor(NSColor.white.cgColor)
+            ctx.fill(CGRect(x: rect.minX, y: rect.midY - thick * whiteFactor / 2,
+                            width: rect.width, height: thick * whiteFactor))
+            ctx.fill(CGRect(x: rect.midX - thick * whiteFactor / 2, y: rect.minY,
+                            width: thick * whiteFactor, height: rect.height))
+            // Coloured cross on top
+            ctx.setFillColor(h.cgColor)
+            ctx.fill(CGRect(x: rect.minX, y: rect.midY - thick/2, width: rect.width, height: thick))
+            ctx.setFillColor(v.cgColor)
+            ctx.fill(CGRect(x: rect.midX - thick/2, y: rect.minY, width: thick, height: rect.height))
+
+        case .star(let color, let cx, let cy, let r):
+            let starR = r * min(rect.width, rect.height)
+            let px = rect.minX + cx * rect.width
+            let py = rect.minY + cy * rect.height
+            ctx.setFillColor(color.cgColor)
+            let path = CGMutablePath()
+            for i in 0..<5 {
+                let outerAngle = CGFloat(i) * 4 * .pi / 5 - .pi / 2
+                let innerAngle = outerAngle + 2 * .pi / 5
+                let outerPt = CGPoint(x: px + cos(outerAngle) * starR, y: py + sin(outerAngle) * starR)
+                let innerPt = CGPoint(x: px + cos(innerAngle) * starR * 0.4, y: py + sin(innerAngle) * starR * 0.4)
+                if i == 0 { path.move(to: outerPt) } else { path.addLine(to: outerPt) }
+                path.addLine(to: innerPt)
+            }
+            path.closeSubpath()
+            ctx.addPath(path)
+            ctx.fillPath()
+
+        case .yinYang(let top, let bottom, let r):
+            let yr = r * min(rect.width, rect.height)
+            let cxPt = rect.midX
+            let cyPt = rect.midY
+            // Full circle bottom colour
+            ctx.setFillColor(bottom.cgColor)
+            ctx.fillEllipse(in: CGRect(x: cxPt - yr, y: cyPt - yr, width: yr*2, height: yr*2))
+            // Top half filled with top colour
+            ctx.setFillColor(top.cgColor)
+            ctx.fillEllipse(in: CGRect(x: cxPt - yr, y: cyPt, width: yr*2, height: yr))
+            // Small inner circles for classic look
+            ctx.setFillColor(top.cgColor)
+            ctx.fillEllipse(in: CGRect(x: cxPt - yr/4, y: cyPt + yr/4, width: yr/2, height: yr/2))
+            ctx.setFillColor(bottom.cgColor)
+            ctx.fillEllipse(in: CGRect(x: cxPt - yr/4, y: cyPt - yr*3/4, width: yr/2, height: yr/2))
+        }
     }
 
     private func startPulse() {
@@ -130,6 +227,7 @@ struct MenuBarIconView: View {
     let isRecording: Bool
     let isProcessing: Bool
     let isMeetingProcessing: Bool
+    let language: WhisperLanguage  // NEW
 
     @State private var iconState = MenuBarIconState()
 
@@ -139,5 +237,6 @@ struct MenuBarIconView: View {
             .onChange(of: isRecording, initial: true) { _, val in iconState.isRecording = val }
             .onChange(of: isProcessing, initial: true) { _, val in iconState.isProcessing = val }
             .onChange(of: isMeetingProcessing, initial: true) { _, val in iconState.isMeetingProcessing = val }
+            .onChange(of: language, initial: true) { _, val in iconState.language = val }
     }
 }
