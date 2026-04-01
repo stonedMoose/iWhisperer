@@ -10,7 +10,7 @@ Local, private speech-to-text for Apple platforms — powered by [whisper.cpp](h
 | **UI** | Menu bar app | Full-screen SwiftUI |
 | **Build** | Swift Package Manager | xcodegen + Xcode |
 | **Transcription** | Batch + streaming modes | Batch mode |
-| **Special features** | Meeting recording with speaker diarization, LLM transcript refinement, global hotkey, text injection at cursor | Transcription history (SwiftData), Live Activity, Siri Shortcuts, Action Button |
+| **Special features** | Meeting recording with speaker diarization, LLM transcript refinement, global hotkeys (record + cycle language), language flag icon, text injection at cursor | Transcription history (SwiftData), Live Activity, Siri Shortcuts, Action Button |
 
 ## Prerequisites
 
@@ -41,14 +41,15 @@ xcodegen generate
 open iWhisperer.xcodeproj
 ```
 
-## npm Scripts
+## pnpm Scripts
 
-All commands are available from the repo root via `npm run`:
+All commands are available from the repo root via `pnpm run`:
 
 | Command | Description |
 |---------|-------------|
 | `build:mac` | Debug build (swift build) |
-| `launch:mac` | Build & run MacWhisperer |
+| `deploy:mac` | Release build + replace binary + codesign + relaunch |
+| `launch:mac` | Build & run MacWhisperer (debug) |
 | `bundle:mac` | Signed .app bundle (release) |
 | `distribute:mac` | Build + DMG via Fastlane |
 | `release:mac` | Full release: build + notarize + DMG + GitHub release |
@@ -99,7 +100,8 @@ All commands are available from the repo root via `npm run`:
 │   ├── plans/                  # Design & implementation documents
 │   └── export-compliance/      # BIS CCATS + ANSSI crypto declarations
 │
-├── package.json                # npm scripts for build/launch
+├── package.json                # pnpm scripts for build/launch
+├── Whisperer/.env.example      # Signing identity template (copy to .env, gitignored)
 ├── CLAUDE.md                   # Claude Code guidance
 └── README.md
 ```
@@ -119,20 +121,29 @@ Whisper models are downloaded on demand to the app's Application Support directo
 - **Streaming mode** — sliding window transcription with word-level LocalAgreement for real-time text insertion
 - **Meeting mode** — records full meetings, uses sherpa-onnx for speaker diarization, merges speaker-labeled segments
 - **LLM refinement** — optionally post-processes meeting transcripts via OpenAI, Anthropic API, or Claude Code CLI
+- **Language flag icon** — menu bar icon renders the active language as a simplified flag pattern composited through the waveform shape
+- **Cycle language shortcut** — keyboard shortcut to cycle through preferred languages without opening Settings
 
 ## Distribution (macOS)
 
-MacWhisperer uses [Fastlane](https://docs.fastlane.tools/) for distribution:
+MacWhisperer is distributed directly (not via App Store) at [stonedmoose.github.io/iWhisperer](https://stonedmoose.github.io/iWhisperer/).
+
+Signing credentials are stored in `Whisperer/.env` (gitignored). Copy `.env.example` and fill in your values.
 
 ```bash
-# Quick: build + create DMG
-npm run distribute:mac
+# Development: build, sign, and relaunch instantly
+pnpm run deploy:mac
+
+# Quick distribution: build + DMG
+pnpm run distribute:mac
 
 # Full release: build + notarize + DMG + GitHub release draft
-npm run release:mac
+pnpm run release:mac
 ```
 
 For notarization, place an [App Store Connect API key](https://docs.fastlane.tools/app-store-connect-api/) at `Whisperer/fastlane/api_key.json`.
+
+> **Gatekeeper note:** Builds without notarization require right-click → Open on first launch.
 
 ## Permissions
 

@@ -265,7 +265,10 @@ Return the full corrected transcript in the same Markdown format. Do not add com
             kSecAttrAccount as String: account,
             kSecValueData as String: data,
         ]
-        SecItemAdd(query as CFDictionary, nil)
+        let status = SecItemAdd(query as CFDictionary, nil)
+        if status != errSecSuccess {
+            Log.general.error("Keychain write failed for \(service)/\(account): \(status)")
+        }
     }
 
     private static func deleteKeychain(service: String, account: String) {

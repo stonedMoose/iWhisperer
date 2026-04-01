@@ -210,7 +210,9 @@ actor TranscriptRefiner {
                 let path = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
                 if !path.isEmpty { return path }
             }
-        } catch {}
+        } catch {
+            Log.general.info("which claude failed: \(error)")
+        }
 
         return nil
     }
