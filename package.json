@@ -5,6 +5,7 @@
   "description": "MacWhisperer (macOS) + iWhisperer (iOS) — local speech-to-text",
   "scripts": {
     "build:mac": "cd Whisperer && swift build",
+    "deploy:mac": "cd Whisperer && swift build -c release && pkill -x MacWhisperer 2>/dev/null; sleep 0.5; cp .build/release/MacWhisperer /Applications/MacWhisperer.app/Contents/MacOS/MacWhisperer && . .env && codesign --force --deep --sign \"$SIGNING_IDENTITY\" --entitlements MacWhisperer.entitlements /Applications/MacWhisperer.app && open /Applications/MacWhisperer.app",
     "build:ios": "cd iWhisperer && xcodegen generate && xcodebuild -project iWhisperer.xcodeproj -scheme iWhisperer -sdk iphoneos -configuration Debug build CODE_SIGNING_ALLOWED=NO",
     "launch:mac": "cd Whisperer && swift run MacWhisperer",
     "launch:ios": "cd iWhisperer && xcodebuild -project iWhisperer.xcodeproj -scheme iWhisperer -sdk iphoneos -configuration Debug build CODE_SIGNING_ALLOWED=NO && open iWhisperer.xcodeproj",

@@ -50,6 +50,7 @@ final class AppState {
         setupHotkey()
         setupModelChangeListener()
         setupNotificationDelegate()
+        RecordingIndicator.installClickMonitor()
         Task {
             await checkPermissionsAndSetup()
             if !settingsStore.hasCompletedSetup {

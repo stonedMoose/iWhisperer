@@ -17,6 +17,9 @@ xcuserdata/
 DerivedData/
 *.xcworkspace/xcuserdata/
 
+# Environment / secrets
+Whisperer/.env
+
 # Fastlane
 Whisperer/fastlane/report.xml
 Whisperer/fastlane/README.md

@@ -14,6 +14,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Load .env if present (env vars already set in the shell take precedence)
+[ -f "$PROJECT_DIR/.env" ] && set -a && source "$PROJECT_DIR/.env" && set +a
 APP_NAME="MacWhisperer"
 BUILD_DIR="$PROJECT_DIR/.build/release"
 APP_BUNDLE="$PROJECT_DIR/$APP_NAME.app"
@@ -22,9 +25,17 @@ ENTITLEMENTS="$PROJECT_DIR/MacWhisperer.appstore.entitlements"
 
 # Signing identities
 # "Apple Distribution" replaces the old "3rd Party Mac Developer Application" since Xcode 11
-APP_SIGNING_IDENTITY="Apple Distribution: Julien Lhermite (3AKV63VNZX)"
+APP_SIGNING_IDENTITY="${APP_SIGNING_IDENTITY:-}"
+if [ -z "$APP_SIGNING_IDENTITY" ]; then
+  echo "Error: APP_SIGNING_IDENTITY env var is required. Set it to your App Store signing identity (e.g. 'Apple Distribution: Name (TEAMID)')."
+  exit 1
+fi
 # "Mac Installer Distribution" is needed for .pkg — create at developer.apple.com/account/resources/certificates
-INSTALLER_SIGNING_IDENTITY="3rd Party Mac Developer Installer: Julien Lhermite (3AKV63VNZX)"
+INSTALLER_SIGNING_IDENTITY="${INSTALLER_SIGNING_IDENTITY:-}"
+if [ -z "$INSTALLER_SIGNING_IDENTITY" ]; then
+  echo "Error: INSTALLER_SIGNING_IDENTITY env var is required. Set it to your installer signing identity (e.g. '3rd Party Mac Developer Installer: Name (TEAMID)')."
+  exit 1
+fi
 
 # Provisioning profile
 PROVISIONING_PROFILE="${PROVISIONING_PROFILE_PATH:-$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/Mac_Distribution.provisionprofile}"
@@ -38,7 +49,7 @@ fi
 echo "═══ Step 1: Building whisper.cpp + MacWhisperer (release) ═══"
 "$SCRIPT_DIR/build-whisper.sh"
 cd "$PROJECT_DIR"
-swift build -c release
+swift build -c release -Xswiftc -DAPPSTORE
 
 # ── Step 2: Create .app bundle ───────────────────────────────────────────
 echo ""
@@ -155,6 +166,12 @@ if $UPLOAD; then
         KEY_ID=$(python3 -c "import json; print(json.load(open('$API_KEY_DIR/api_key.json'))['key_id'])")
         KEY_FILE=$(python3 -c "import json; print(json.load(open('$API_KEY_DIR/api_key.json'))['key_filepath'])")
 
+        APPLE_APP_ID="${APPLE_APP_ID:-}"
+        if [ -z "$APPLE_APP_ID" ]; then
+          echo "Error: APPLE_APP_ID env var is required. Set it to your App Store Connect numeric app ID."
+          exit 1
+        fi
+
         xcrun altool --upload-package "$PKG_OUTPUT" \
             --type macos \
             --bundle-id "fr.moose.Whisperer" \
@@ -162,7 +179,7 @@ if $UPLOAD; then
             --bundle-short-version-string "0.1.0" \
             --apiKey "$KEY_ID" \
             --apiIssuer "$ISSUER_ID" \
-            --apple-id "6760629108"
+            --apple-id "$APPLE_APP_ID"
 
         echo "Upload complete!"
     else

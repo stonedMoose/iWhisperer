@@ -251,7 +251,7 @@ private func withThrowingTimeout<T: Sendable>(_ duration: Duration, operation: @
             try await Task.sleep(for: duration)
             throw WhisperCppError.timedOut
         }
-        let result = try await group.next()!
+        guard let result = try await group.next() else { throw WhisperCppError.timedOut }
         group.cancelAll()
         return result
     }

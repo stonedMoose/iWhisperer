@@ -17,7 +17,9 @@ final class MeetingRecorder {
     var isRecording: Bool { wavWriter != nil }
 
     func startRecording() throws {
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        guard let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            throw MeetingError.directoryUnavailable
+        }
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd-HHmmss"
         let filename = "meeting-\(formatter.string(from: Date())).wav"
@@ -176,10 +178,12 @@ final class MeetingRecorder {
 
 enum MeetingError: LocalizedError {
     case transcriptionFailed(String)
+    case directoryUnavailable
 
     var errorDescription: String? {
         switch self {
         case .transcriptionFailed(let detail): "Meeting transcription failed: \(detail)"
+        case .directoryUnavailable: "Application Support directory is unavailable"
         }
     }
 }

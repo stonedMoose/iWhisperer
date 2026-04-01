@@ -27,6 +27,7 @@ actor ModelManager {
         let delegate = DownloadDelegate(progressCallback: progressCallback)
         let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
         let (tempURL, response) = try await session.download(from: url, delegate: delegate)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -107,6 +108,7 @@ actor ModelManager {
         let delegate = DownloadDelegate(progressCallback: progressCallback)
         let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
         let (tempURL, response) = try await session.download(from: url, delegate: delegate)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -157,7 +159,9 @@ actor ModelManager {
     }
 
     private var modelsDirectory: String {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            fatalError("Application Support directory unavailable — the system sandbox is missing a required container directory")
+        }
         return appSupport.appendingPathComponent("Whisperer/models").path
     }
 }

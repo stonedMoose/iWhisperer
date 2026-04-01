@@ -6,6 +6,21 @@ import SwiftUI
 final class RecordingIndicator {
     private var window: NSWindow?
 
+    // Tracks the last left-click position globally — used as fallback when AX caret fails
+    // (e.g. in Electron apps like VS Code that don't expose caret bounds via AX).
+    // Users always click to position their cursor before typing, so this is accurate.
+    private static var lastClickPosition: NSPoint?
+    private static var clickMonitorInstalled = false
+
+    static func installClickMonitor() {
+        guard !clickMonitorInstalled else { return }
+        clickMonitorInstalled = true
+        // Handler is called on the main thread (monitor installed from main thread)
+        NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { _ in
+            RecordingIndicator.lastClickPosition = NSEvent.mouseLocation
+        }
+    }
+
     /// Show the recording indicator near the text cursor.
     /// Returns `false` (and beeps) if no text cursor is found.
     @discardableResult
@@ -13,13 +28,25 @@ final class RecordingIndicator {
         guard window == nil else { return true }
 
         let caretPoint: NSPoint
-        if let caret = Self.caretScreenPosition(), (caret.x != 0 || caret.y != 0) {
+        let axCaret = Self.caretScreenPosition()
+        if let lastClick = Self.lastClickPosition {
+            // We have a last-click baseline. Only trust AX if it's within 300pt
+            // of that click — meaning AX is actually tracking cursor movement.
+            // Electron apps (VS Code) return an AX position near the document
+            // origin, which is far from the real click location.
+            if let caret = axCaret, hypot(caret.x - lastClick.x, caret.y - lastClick.y) < 300 {
+                Log.ui.info("Using AX caret (close to last click): x=\(caret.x, privacy: .public) y=\(caret.y, privacy: .public)")
+                caretPoint = caret
+            } else {
+                Log.ui.info("Using last click (AX absent or too far): x=\(lastClick.x, privacy: .public) y=\(lastClick.y, privacy: .public)")
+                caretPoint = lastClick
+            }
+        } else if let caret = axCaret {
             caretPoint = caret
         } else {
-            // Fallback to mouse cursor when caret position is unavailable or (0,0)
-            let mouseLocation = NSEvent.mouseLocation
-            Log.ui.info("Caret unavailable, falling back to mouse: x=\(mouseLocation.x, privacy: .public) y=\(mouseLocation.y, privacy: .public)")
-            caretPoint = mouseLocation
+            let mouse = NSEvent.mouseLocation
+            Log.ui.info("No click history, falling back to mouse: x=\(mouse.x, privacy: .public) y=\(mouse.y, privacy: .public)")
+            caretPoint = mouse
         }
 
         let width: CGFloat = 48
@@ -74,7 +101,7 @@ final class RecordingIndicator {
         guard AXUIElementCopyAttributeValue(appElement, kAXFocusedUIElementAttribute as CFString, &focusedValue) == .success,
               let focused = focusedValue else { return nil }
 
-        let focusedElement = focused as! AXUIElement
+        let focusedElement = focused as! AXUIElement  // CF bridged type — cast always succeeds per compiler
 
         // Get the selected text range (cursor position)
         var rangeValue: CFTypeRef?
@@ -88,14 +115,46 @@ final class RecordingIndicator {
 
         // Extract CGRect from the AXValue
         var rect = CGRect.zero
-        guard AXValueGetValue(bounds as! AXValue, .cgRect, &rect) else { return nil }
+        let boundsAXValue = bounds as! AXValue  // CF bridged type — cast always succeeds per compiler
+        guard AXValueGetValue(boundsAXValue, .cgRect, &rect) else { return nil }
+
+        Log.ui.info("AX caret rect: x=\(rect.origin.x, privacy: .public) y=\(rect.origin.y, privacy: .public) w=\(rect.size.width, privacy: .public) h=\(rect.size.height, privacy: .public)")
+
+        // Validate caret is within the focused window (rejects bogus origins like (0,0) from Electron apps)
+        var windowValue: CFTypeRef?
+        if AXUIElementCopyAttributeValue(appElement, kAXFocusedWindowAttribute as CFString, &windowValue) == .success,
+           let windowRef = windowValue {
+            let windowElement = windowRef as! AXUIElement
+            var winPosVal: CFTypeRef?
+            var winSizeVal: CFTypeRef?
+            if AXUIElementCopyAttributeValue(windowElement, kAXPositionAttribute as CFString, &winPosVal) == .success,
+               AXUIElementCopyAttributeValue(windowElement, kAXSizeAttribute as CFString, &winSizeVal) == .success,
+               let wp = winPosVal, let ws = winSizeVal {
+                var winPos = CGPoint.zero
+                var winSize = CGSize.zero
+                AXValueGetValue(wp as! AXValue, .cgPoint, &winPos)
+                AXValueGetValue(ws as! AXValue, .cgSize, &winSize)
+                let winFrame = CGRect(origin: winPos, size: winSize).insetBy(dx: -4, dy: -4)
+                if !winFrame.contains(rect.origin) {
+                    Log.ui.info("AX caret origin outside window frame — falling back to mouse")
+                    return nil
+                }
+            }
+        }
 
         // AX coordinates: origin at top-left of primary display
         // AppKit coordinates: origin at bottom-left of primary display
-        guard let mainScreen = NSScreen.main else { return nil }
-        let flippedY = mainScreen.frame.height - rect.origin.y - rect.size.height
+        let primaryScreenHeight = NSScreen.screens.first?.frame.height ?? NSScreen.main?.frame.height ?? 0
+        guard primaryScreenHeight > 0 else { return nil }
+        let flippedY = primaryScreenHeight - rect.origin.y - rect.size.height
 
-        return NSPoint(x: rect.origin.x, y: flippedY)
+        let converted = NSPoint(x: rect.origin.x, y: flippedY)
+        // Reject if converted point is off all screens
+        guard NSScreen.screens.contains(where: { $0.frame.contains(converted) }) else {
+            Log.ui.info("AX caret maps off-screen — falling back to mouse")
+            return nil
+        }
+        return converted
     }
 }
 

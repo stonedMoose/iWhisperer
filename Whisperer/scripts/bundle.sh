@@ -4,12 +4,19 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Load .env if present (env vars already set in the shell take precedence)
+[ -f "$PROJECT_DIR/.env" ] && set -a && source "$PROJECT_DIR/.env" && set +a
 APP_NAME="MacWhisperer"
 BUILD_DIR="$PROJECT_DIR/.build/release"
 APP_BUNDLE="$PROJECT_DIR/$APP_NAME.app"
 DMG_OUTPUT="$PROJECT_DIR/$APP_NAME.dmg"
 ENTITLEMENTS="$PROJECT_DIR/MacWhisperer.entitlements"
-SIGNING_IDENTITY="Apple Development: Julien Lhermite (7BZ7SQPUW6)"
+SIGNING_IDENTITY="${SIGNING_IDENTITY:-}"
+if [ -z "$SIGNING_IDENTITY" ]; then
+  echo "Error: SIGNING_IDENTITY env var is required. Set it to your signing identity (e.g. 'Apple Development: Name (TEAMID)')."
+  exit 1
+fi
 
 echo "Building whisper.cpp..."
 "$SCRIPT_DIR/build-whisper.sh"

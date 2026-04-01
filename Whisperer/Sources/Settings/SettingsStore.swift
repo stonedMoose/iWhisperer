@@ -125,7 +125,10 @@ final class SettingsStore {
         get {
             access(keyPath: \.transcriptDirectory)
             if _transcriptDirectory.isEmpty {
-                return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+                guard let docDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+                    fatalError("Documents directory unavailable — the system sandbox is missing a required container directory")
+                }
+                return docDir
             }
             return URL(fileURLWithPath: _transcriptDirectory)
         }

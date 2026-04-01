@@ -140,21 +140,45 @@ actor TranscriptRefiner {
         process.standardOutput = stdout
         process.standardError = stderr
 
-        try process.run()
+        return try await withThrowingTaskGroup(of: String.self) { group in
+            group.addTask {
+                try await withCheckedThrowingContinuation { continuation in
+                    process.terminationHandler = { proc in
+                        let outputData = stdout.fileHandleForReading.readDataToEndOfFile()
+                        let output = String(data: outputData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
-        return try await withCheckedThrowingContinuation { continuation in
-            process.terminationHandler = { proc in
-                let outputData = stdout.fileHandleForReading.readDataToEndOfFile()
-                let output = String(data: outputData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-
-                if proc.terminationStatus != 0 {
-                    let errorData = stderr.fileHandleForReading.readDataToEndOfFile()
-                    let errorOutput = String(data: errorData, encoding: .utf8) ?? ""
-                    continuation.resume(throwing: RefinementError.requestFailed("Claude CLI exited with code \(proc.terminationStatus): \(errorOutput)"))
-                } else {
-                    continuation.resume(returning: output)
+                        if proc.terminationStatus != 0 {
+                            let errorData = stderr.fileHandleForReading.readDataToEndOfFile()
+                            let errorOutput = String(data: errorData, encoding: .utf8) ?? ""
+                            continuation.resume(throwing: RefinementError.requestFailed("Claude CLI exited with code \(proc.terminationStatus): \(errorOutput)"))
+                        } else {
+                            continuation.resume(returning: output)
+                        }
+                    }
+                    do {
+                        try process.run()
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
                 }
             }
+
+            group.addTask {
+                try await Task.sleep(for: .seconds(120))
+                throw RefinementError.requestFailed("Claude CLI process timed out after 120 seconds")
+            }
+
+            defer {
+                group.cancelAll()
+                if process.isRunning {
+                    process.terminate()
+                }
+            }
+
+            guard let result = try await group.next() else {
+                throw RefinementError.requestFailed("No result from Claude CLI process")
+            }
+            return result
         }
     }
 
