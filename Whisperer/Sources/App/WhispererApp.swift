@@ -17,6 +17,9 @@ struct MacWhispererApp: App {
 
     var body: some Scene {
         MenuBarExtra {
+            // Observe appLanguage so menu bar re-renders on interface language change
+            let _ = settingsStore.appLanguage
+
             // Status
             if !appState.micPermissionGranted {
                 Label(L10n.microphoneNotAuthorized, systemImage: "exclamationmark.triangle")
@@ -81,14 +84,14 @@ struct MacWhispererApp: App {
             // Language quick-switch
             Section(L10n.language) {
                 Button {
-                    settingsStore.selectedLanguage = .auto
+                    appState.selectTranscriptionLanguage(.auto)
                 } label: {
                     Text("\(L10n.autoDetect) \(settingsStore.selectedLanguage == .auto ? "✓" : "")")
                 }
 
                 ForEach(settingsStore.preferredLanguages) { language in
                     Button {
-                        settingsStore.selectedLanguage = language
+                        appState.selectTranscriptionLanguage(language)
                     } label: {
                         Text("\(language.displayName) \(settingsStore.selectedLanguage == language ? "✓" : "")")
                     }

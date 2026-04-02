@@ -254,7 +254,25 @@ final class AppState {
         guard options.count > 1 else { return }
         let current = settingsStore.selectedLanguage
         let idx = options.firstIndex(of: current) ?? -1
-        settingsStore.selectedLanguage = options[(idx + 1) % options.count]
+        selectTranscriptionLanguage(options[(idx + 1) % options.count])
+    }
+
+    func selectTranscriptionLanguage(_ language: WhisperLanguage) {
+        settingsStore.selectedLanguage = language
+        sendLanguageChangeNotification(language)
+    }
+
+    private func sendLanguageChangeNotification(_ language: WhisperLanguage) {
+        let name = language == .auto ? "Auto-detect" : language.displayName
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert]) { granted, _ in
+            guard granted else { return }
+            let content = UNMutableNotificationContent()
+            content.title = "Language"
+            content.body = name
+            content.sound = nil
+            let request = UNNotificationRequest(identifier: "languageChange", content: content, trigger: nil)
+            UNUserNotificationCenter.current().add(request)
+        }
     }
 
     private func setupHotkey() {

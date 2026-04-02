@@ -146,9 +146,6 @@ private struct GeneralSection: View {
                         Text(lang.displayName).tag(lang)
                     }
                 }
-                .onChange(of: settings.appLanguage) { _, newValue in
-                    L10n.current = newValue
-                }
             } header: {
                 Text("Interface Language")
             } footer: {
