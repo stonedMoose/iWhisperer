@@ -25,6 +25,7 @@ final class AppState {
     var meetingStatusMessage = ""
     var meetingElapsedTime: TimeInterval = 0
     var showSetupWindow = false
+    var inputDevices: [AudioInputDevice] = []
 
     private let whisperEngine = WhisperCppEngine()
     /// Separate engine for streaming so it can run a lighter model concurrently.
@@ -35,6 +36,8 @@ final class AppState {
     private let settingsStore: SettingsStore
     private var modelChangeObserver: NSObjectProtocol?
     private var streamingModelChangeObserver: NSObjectProtocol?
+    private var wakeObserver: NSObjectProtocol?
+    private var audioDeviceObserver: NSObjectProtocol?
     private var permissionPollTask: Task<Void, Never>?
     private var streamingLoopTask: Task<Void, Never>?
     var isStreamingModelLoaded = false
@@ -80,6 +83,9 @@ final class AppState {
         setupModelChangeListener()
         setupStreamingModelChangeListener()
         setupNotificationDelegate()
+        setupWakeHandler()
+        setupAudioDeviceListener()
+        refreshInputDevices()
         RecordingIndicator.installClickMonitor()
         Task {
             await checkPermissionsAndSetup()
@@ -236,6 +242,40 @@ final class AppState {
         }
     }
 
+    private func setupWakeHandler() {
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                Log.general.info("System woke from sleep — re-registering hotkeys and refreshing state")
+                self.setupHotkey()
+                self.recheckPermissions()
+                self.refreshInputDevices()
+                RecordingIndicator.installClickMonitor()
+            }
+        }
+    }
+
+    private func setupAudioDeviceListener() {
+        audioDeviceObserver = NotificationCenter.default.addObserver(
+            forName: .audioDevicesChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.refreshInputDevices()
+            }
+        }
+        AudioDeviceManager.startListeningForChanges()
+    }
+
+    func refreshInputDevices() {
+        inputDevices = AudioDeviceManager.listInputDevices()
+    }
+
     deinit {
         MainActor.assumeIsolated {
             permissionPollTask?.cancel()
@@ -245,6 +285,13 @@ final class AppState {
             if let observer = streamingModelChangeObserver {
                 NotificationCenter.default.removeObserver(observer)
             }
+            if let observer = wakeObserver {
+                NSWorkspace.shared.notificationCenter.removeObserver(observer)
+            }
+            if let observer = audioDeviceObserver {
+                NotificationCenter.default.removeObserver(observer)
+            }
+            AudioDeviceManager.stopListeningForChanges()
         }
     }
 
@@ -341,7 +388,9 @@ final class AppState {
     // MARK: - Recording
 
     private func startRecording() {
-        guard isModelLoaded, !isProcessing, !isMeetingRecording, !isMeetingProcessing else { return }
+        guard isModelLoaded, !isProcessing, !isMeetingRecording, !isMeetingProcessing else {
+            return
+        }
 
         recheckPermissions()
 
@@ -354,7 +403,6 @@ final class AppState {
             TextInjector.requestAccessibilityPermission()
             return
         }
-
         if settingsStore.streamingMode {
             startStreamingRecording()
         } else {
@@ -377,7 +425,8 @@ final class AppState {
     private func startBatchRecording() {
         do {
             try audioCapture.startRecording(deviceUID: settingsStore.selectedMicrophoneUID)
-            guard recordingIndicator.show() else {
+            let shown = recordingIndicator.show()
+            guard shown else {
                 _ = audioCapture.stopRecording()
                 return
             }

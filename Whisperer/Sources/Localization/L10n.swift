@@ -120,6 +120,48 @@ enum L10n {
     static var setupGetStarted: String { t("Get Started", "Commencer", "Comenzar", "开始使用", "Começar", "Loslegen") }
     static var setupSkip: String { t("Skip for now", "Ignorer pour l'instant", "Omitir por ahora", "暂时跳过", "Pular por agora", "Vorerst überspringen") }
 
+    // MARK: Settings - Sidebar section names
+    static var sectionLanguages: String { t("Languages", "Langues", "Idiomas", "语言", "Idiomas", "Sprachen") }
+    static var sectionTranscription: String { t("Transcription", "Transcription", "Transcripción", "转录", "Transcrição", "Transkription") }
+    static var sectionStreaming: String { t("Streaming", "Streaming", "Streaming", "流式传输", "Streaming", "Streaming") }
+    static var sectionSupport: String { t("Support", "Assistance", "Soporte", "支持", "Suporte", "Support") }
+
+    // MARK: Settings - General
+    static var settingsStartup: String { t("Startup", "Démarrage", "Inicio automático", "开机启动", "Inicialização", "Autostart") }
+    static var settingsInputDevice: String { t("Input device", "Périphérique d'entrée", "Dispositivo de entrada", "输入设备", "Dispositivo de entrada", "Eingabegerät") }
+    static var settingsInterfaceLanguage: String { t("Interface Language", "Langue de l'interface", "Idioma de la interfaz", "界面语言", "Idioma da interface", "Oberflächensprache") }
+
+    // MARK: Settings - Languages section
+    static var settingsShortcut: String { t("Shortcut", "Raccourci", "Atajo", "快捷键", "Atalho", "Kurzbefehl") }
+    static var settingsCycleLanguages: String { t("Cycle preferred languages", "Parcourir les langues préférées", "Ciclar idiomas preferidos", "循环切换首选语言", "Ciclar idiomas preferidos", "Sprachen durchschalten") }
+
+    // MARK: Settings - Transcription section
+    static var settingsLivePreview: String { t("Live Preview", "Aperçu en direct", "Vista previa en vivo", "实时预览", "Pré-visualização ao vivo", "Live-Vorschau") }
+    static var settingsShowWordsAsYouSpeak: String { t("Show words as you speak", "Afficher les mots en temps réel", "Mostrar palabras mientras hablas", "边说边显示文字", "Mostrar palavras enquanto fala", "Wörter beim Sprechen anzeigen") }
+    static var settingsHoldToRecord: String { t("Hold to record", "Maintenir pour enregistrer", "Mantener para grabar", "按住录音", "Segurar para gravar", "Halten zum Aufnehmen") }
+
+    // MARK: Settings - Streaming section
+    static var settingsEnableLivePreview: String { t("Enable live preview", "Activer l'aperçu en direct", "Activar vista previa en vivo", "启用实时预览", "Ativar pré-visualização ao vivo", "Live-Vorschau aktivieren") }
+    static var settingsStreamingModel: String { t("Streaming Model", "Modèle de streaming", "Modelo de streaming", "流式模型", "Modelo de streaming", "Streaming-Modell") }
+    static var settingsStatus: String { t("Status", "Statut", "Estado", "状态", "Status", "Status") }
+    static var settingsLoadingModel: String { t("Loading model…", "Chargement du modèle…", "Cargando modelo…", "正在加载模型…", "Carregando modelo…", "Modell wird geladen…") }
+
+    // MARK: Settings - Meeting section
+    static var settingsToggleRecording: String { t("Toggle recording", "Basculer l'enregistrement", "Alternar grabación", "切换录音", "Alternar gravação", "Aufnahme umschalten") }
+    static var settingsSaveTo: String { t("Save to", "Enregistrer dans", "Guardar en", "保存到", "Salvar em", "Speichern in") }
+    static var settingsRefineWithAI: String { t("Refine with AI after transcription", "Améliorer avec l'IA après la transcription", "Refinar con IA tras transcribir", "转录后用AI优化", "Refinar com IA após transcrição", "Nach Transkription mit KI verfeinern") }
+    static var settingsModelID: String { t("Model ID", "ID du modèle", "ID del modelo", "模型 ID", "ID do modelo", "Modell-ID") }
+    static var settingsResetToDefault: String { t("Reset to default", "Réinitialiser", "Restablecer", "重置", "Redefinir", "Zurücksetzen") }
+
+    // MARK: Settings - Permissions section
+    static var settingsRequiredPermissions: String { t("Required Permissions", "Autorisations requises", "Permisos requeridos", "必要权限", "Permissões necessárias", "Erforderliche Berechtigungen") }
+    static var settingsOpenSetupGuide: String { t("Open setup guide…", "Ouvrir le guide de configuration…", "Abrir guía de configuración…", "打开guía de configuración…", "Abrir guia de configuração…", "Einrichtungshilfe öffnen…") }
+
+    // MARK: Settings - Support section
+    static var settingsBugReport: String { t("Bug Report", "Signalement de bug", "Reporte de error", "错误报告", "Relatório de bug", "Fehlerbericht") }
+    static var settingsBugDescription: String { t("Description", "Description", "Descripción", "描述", "Descrição", "Beschreibung") }
+    static var settingsSendBugReport: String { t("Send Bug Report", "Envoyer le rapport", "Enviar reporte", "发送错误报告", "Enviar relatório", "Fehlerbericht senden") }
+
     // MARK: Settings - Permissions
     static var settingsPermissions: String { t("Permissions", "Autorisations", "Permisos", "权限", "Permissões", "Berechtigungen") }
     static var settingsMicrophone: String { t("Microphone", "Microphone", "Micrófono", "麦克风", "Microfone", "Mikrofon") }

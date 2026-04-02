@@ -47,7 +47,15 @@ final class AudioCapture: @unchecked Sendable {
 
     /// Start capturing audio from the microphone at 16kHz mono (what whisper.cpp expects).
     func startRecording(deviceUID: String = "") throws {
+        // Reset the engine so the input node re-reads hardware format for the new device.
+        engine.reset()
+
         if !deviceUID.isEmpty, let deviceID = AudioDeviceManager.deviceID(forUID: deviceUID) {
+            // Set the system default input device. This is required for remote devices
+            // like iPhone Continuity microphones — they only activate when macOS
+            // designates them as the system input at the HAL level.
+            AudioDeviceManager.setDefaultInputDevice(deviceID)
+
             var id = deviceID
             let status = AudioUnitSetProperty(
                 engine.inputNode.audioUnit!,
@@ -58,12 +66,15 @@ final class AudioCapture: @unchecked Sendable {
                 UInt32(MemoryLayout<AudioDeviceID>.size)
             )
             if status != noErr {
-                Log.audio.error("Failed to set input device \(deviceUID): \(status)")
+                Log.audio.error("Failed to set input device \(deviceUID): OSStatus \(status)")
+            } else {
+                Log.audio.info("Input device set to \(deviceUID)")
             }
         }
 
         let inputNode = engine.inputNode
         let nativeFormat = inputNode.outputFormat(forBus: 0)
+        Log.audio.info("Input format: \(nativeFormat.sampleRate) Hz, \(nativeFormat.channelCount) ch")
 
         // whisper.cpp expects 16kHz mono Float32 audio
         guard let recordingFormat = AVAudioFormat(
@@ -129,6 +140,7 @@ final class AudioCapture: @unchecked Sendable {
     func stopRecording() -> [Float] {
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
+        AudioDeviceManager.restoreDefaultInputDevice()
 
         return bufferQueue.sync {
             let samples = audioBuffer

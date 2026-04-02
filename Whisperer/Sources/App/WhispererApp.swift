@@ -63,8 +63,8 @@ struct MacWhispererApp: App {
             }
 
             // Microphone quick-switch
-            let inputDevices = AudioDeviceManager.listInputDevices()
-            if !inputDevices.isEmpty {
+            if !appState.inputDevices.isEmpty {
+                let inputDevices = appState.inputDevices
                 Section("Microphone") {
                     Button {
                         settingsStore.selectedMicrophoneUID = ""
