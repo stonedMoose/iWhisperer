@@ -48,6 +48,8 @@ struct SettingsView: View {
     }
 
     var body: some View {
+        // Observe appLanguage so the entire settings view re-renders when the interface language changes
+        let _ = settings.appLanguage
         NavigationSplitView(columnVisibility: $columnVisibility) {
             VStack(spacing: 0) {
                 VStack(spacing: 6) {
@@ -70,19 +72,31 @@ struct SettingsView: View {
                 Divider()
 
                 List(Section.allCases, selection: $selectedSection) { section in
-                    Label(section.rawValue, systemImage: section.icon)
+                    Label(sectionName(section), systemImage: section.icon)
                         .tag(section)
                 }
             }
             .navigationSplitViewColumnWidth(200)
         } detail: {
             detailView
-                .navigationTitle(selectedSection.rawValue)
+                .navigationTitle(sectionName(selectedSection))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .toolbar(removing: .sidebarToggle)
         .background(ToolbarRemover())
         .frame(width: 760, height: 520)
+    }
+
+    private func sectionName(_ section: Section) -> String {
+        switch section {
+        case .general:     L10n.general
+        case .languages:   L10n.sectionLanguages
+        case .batch:       L10n.sectionTranscription
+        case .streaming:   L10n.sectionStreaming
+        case .meeting:     L10n.meeting
+        case .permissions: L10n.settingsPermissions
+        case .support:     L10n.sectionSupport
+        }
     }
 
     @ViewBuilder
@@ -108,8 +122,8 @@ private struct GeneralSection: View {
         @Bindable var settings = settings
         let devices = AudioDeviceManager.listInputDevices()
         Form {
-            Section("Startup") {
-                Toggle("Launch at login", isOn: $settings.launchAtLogin)
+            Section(L10n.settingsStartup) {
+                Toggle(L10n.launchAtLogin, isOn: $settings.launchAtLogin)
                     .onChange(of: settings.launchAtLogin) { _, newValue in
                         do {
                             if newValue {
@@ -125,7 +139,7 @@ private struct GeneralSection: View {
             }
 
             Section {
-                Picker("Input device", selection: $settings.selectedMicrophoneUID) {
+                Picker(L10n.settingsInputDevice, selection: $settings.selectedMicrophoneUID) {
                     Text("System Default").tag("")
                     if !devices.isEmpty {
                         Divider()
@@ -135,19 +149,19 @@ private struct GeneralSection: View {
                     }
                 }
             } header: {
-                Text("Microphone")
+                Text(L10n.settingsMicrophone)
             } footer: {
                 Text("Overrides the system default microphone for all recording modes.")
             }
 
             Section {
-                Picker("Language", selection: $settings.appLanguage) {
+                Picker(L10n.language, selection: $settings.appLanguage) {
                     ForEach(AppLanguage.allCases) { lang in
                         Text(lang.displayName).tag(lang)
                     }
                 }
             } header: {
-                Text("Interface Language")
+                Text(L10n.settingsInterfaceLanguage)
             } footer: {
                 Text("Changes the language of all menus and labels in the app.")
             }
@@ -164,11 +178,11 @@ private struct LanguagesSection: View {
     var body: some View {
         Form {
             Section {
-                LabeledContent("Cycle preferred languages") {
+                LabeledContent(L10n.settingsCycleLanguages) {
                     KeyboardShortcuts.Recorder(for: .cycleLanguage)
                 }
             } header: {
-                Text("Shortcut")
+                Text(L10n.settingsShortcut)
             } footer: {
                 Text("Rotates through your preferred languages in order. Auto-detect is prepended when fewer than two languages are selected.")
             }
@@ -181,9 +195,9 @@ private struct LanguagesSection: View {
                     ))
                 }
             } header: {
-                Text("Preferred Languages")
+                Text(L10n.preferredLanguages)
             } footer: {
-                Text("Selected languages appear in the menu bar quick-switch and are cycled by the keyboard shortcut.")
+                Text(L10n.preferredLanguagesCaption)
             }
         }
         .formStyle(.grouped)
@@ -199,25 +213,25 @@ private struct BatchSection: View {
         @Bindable var settings = settings
         Form {
             Section {
-                LabeledContent("Hold to record") {
+                LabeledContent(L10n.settingsHoldToRecord) {
                     KeyboardShortcuts.Recorder(for: .holdToRecord)
                 }
             } header: {
-                Text("Shortcut")
+                Text(L10n.settingsShortcut)
             } footer: {
                 Text("Hold the key to record; release to transcribe and insert text at the cursor.")
             }
 
             Section {
-                Toggle("Show words as you speak", isOn: $settings.streamingMode)
+                Toggle(L10n.settingsShowWordsAsYouSpeak, isOn: $settings.streamingMode)
             } header: {
-                Text("Live Preview")
+                Text(L10n.settingsLivePreview)
             } footer: {
                 Text("Words appear in real time while you hold the key. Configure the streaming model in the Streaming section.")
             }
 
             Section {
-                Picker("Model", selection: $settings.selectedModel) {
+                Picker(L10n.model, selection: $settings.selectedModel) {
                     ForEach(WhisperModel.allCases) { model in
                         Text(model.displayName).tag(model)
                     }
@@ -226,7 +240,7 @@ private struct BatchSection: View {
                     NotificationCenter.default.post(name: .modelChanged, object: nil)
                 }
             } header: {
-                Text("Model")
+                Text(L10n.model)
             } footer: {
                 Text("Transcription runs after you release the key. Larger models produce more accurate results at the cost of processing time.")
             }
@@ -245,15 +259,15 @@ private struct StreamingSection: View {
         @Bindable var settings = settings
         Form {
             Section {
-                Toggle("Enable live preview", isOn: $settings.streamingMode)
+                Toggle(L10n.settingsEnableLivePreview, isOn: $settings.streamingMode)
             } header: {
-                Text("Live Preview")
+                Text(L10n.settingsLivePreview)
             } footer: {
                 Text("Words appear in real time using a sliding window while you speak, then are confirmed when you release the key.")
             }
 
             Section {
-                Picker("Model", selection: Binding(
+                Picker(L10n.model, selection: Binding(
                     get: { settings.streamingModel ?? settings.selectedModel },
                     set: { newModel in
                         settings.streamingModel = newModel == settings.selectedModel ? nil : newModel
@@ -266,16 +280,16 @@ private struct StreamingSection: View {
                 }
 
                 if settings.streamingMode && !appState.isStreamingModelLoaded {
-                    LabeledContent("Status") {
+                    LabeledContent(L10n.settingsStatus) {
                         HStack(spacing: 6) {
                             ProgressView().controlSize(.small)
-                            Text("Loading model…")
+                            Text(L10n.settingsLoadingModel)
                                 .foregroundStyle(.secondary)
                         }
                     }
                 }
             } header: {
-                Text("Streaming Model")
+                Text(L10n.settingsStreamingModel)
             } footer: {
                 streamingModelFooter
             }
@@ -302,23 +316,23 @@ private struct MeetingSection: View {
         @Bindable var settings = settings
         Form {
             Section {
-                LabeledContent("Toggle recording") {
+                LabeledContent(L10n.settingsToggleRecording) {
                     KeyboardShortcuts.Recorder(for: .meetingRecord)
                 }
             } header: {
-                Text("Shortcut")
+                Text(L10n.settingsShortcut)
             } footer: {
                 Text("Press once to start and again to stop. Transcription with speaker identification runs automatically.")
             }
 
             Section {
-                LabeledContent("Save to") {
+                LabeledContent(L10n.settingsSaveTo) {
                     HStack(spacing: 8) {
                         Text(settings.transcriptDirectory.lastPathComponent)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .truncationMode(.middle)
-                        Button("Choose…") {
+                        Button(L10n.choose) {
                             let panel = NSOpenPanel()
                             panel.canChooseFiles = false
                             panel.canChooseDirectories = true
@@ -332,15 +346,15 @@ private struct MeetingSection: View {
                     }
                 }
             } header: {
-                Text("Transcript Location")
+                Text(L10n.transcriptLocation)
             } footer: {
                 Text("Each meeting is saved as a Markdown file named with the date and time.")
             }
 
             Section {
-                Toggle("Refine with AI after transcription", isOn: $settings.refinementEnabled)
+                Toggle(L10n.settingsRefineWithAI, isOn: $settings.refinementEnabled)
 
-                Picker("Provider", selection: $settings.refinementProvider) {
+                Picker(L10n.provider, selection: $settings.refinementProvider) {
                     ForEach(LLMProvider.allCases) { provider in
                         Text(provider.displayName).tag(provider)
                     }
@@ -350,12 +364,12 @@ private struct MeetingSection: View {
                 }
 
                 if settings.refinementProvider.requiresAPIKey {
-                    SecureField("API Key", text: $settings.refinementAPIKey)
+                    SecureField(L10n.apiKey, text: $settings.refinementAPIKey)
                 }
 
-                TextField("Model ID", text: $settings.refinementModel)
+                TextField(L10n.settingsModelID, text: $settings.refinementModel)
 
-                LabeledContent("Prompt") {
+                LabeledContent(L10n.prompt) {
                     TextEditor(text: $settings.refinementPrompt)
                         .font(.body)
                         .frame(minHeight: 110)
@@ -369,14 +383,14 @@ private struct MeetingSection: View {
 
                 HStack {
                     Spacer()
-                    Button("Reset to default") {
+                    Button(L10n.settingsResetToDefault) {
                         settings.refinementPrompt = SettingsStore.defaultRefinementPrompt
                     }
                     .controlSize(.small)
                     .foregroundStyle(.secondary)
                 }
             } header: {
-                Text("AI Refinement")
+                Text(L10n.aiRefinement)
             } footer: {
                 Text("After speaker diarization, an LLM identifies speakers by name and fixes cross-speaker attribution errors.")
             }
@@ -396,7 +410,7 @@ private struct PermissionsSection: View {
             Section {
                 PermissionCard(
                     icon: "mic.fill",
-                    title: "Microphone",
+                    title: L10n.settingsMicrophone,
                     description: "Required to capture audio during recording.",
                     isGranted: appState.micPermissionGranted,
                     action: { appState.openMicrophoneSettings() }
@@ -404,19 +418,19 @@ private struct PermissionsSection: View {
 
                 PermissionCard(
                     icon: "accessibility",
-                    title: "Accessibility",
+                    title: L10n.settingsAccessibility,
                     description: "Required to insert transcribed text at the cursor position.",
                     isGranted: appState.accessibilityPermissionGranted,
                     action: { appState.openAccessibilitySettings() }
                 )
             } header: {
-                Text("Required Permissions")
+                Text(L10n.settingsRequiredPermissions)
             } footer: {
                 Text("Both permissions are needed for full functionality. After granting Accessibility, restart the app.")
             }
 
             Section {
-                Button("Open setup guide…") {
+                Button(L10n.settingsOpenSetupGuide) {
                     openWindow(id: "setup")
                     NSApplication.shared.activate(ignoringOtherApps: true)
                 }
@@ -479,7 +493,7 @@ private struct SupportSection: View {
     var body: some View {
         Form {
             Section {
-                LabeledContent("Description") {
+                LabeledContent(L10n.settingsBugDescription) {
                     TextEditor(text: $bugDescription)
                         .font(.body)
                         .frame(minHeight: 90)
@@ -493,13 +507,13 @@ private struct SupportSection: View {
 
                 HStack {
                     Spacer()
-                    Button("Send Bug Report") {
+                    Button(L10n.settingsSendBugReport) {
                         sendBugReport()
                     }
                     .disabled(bugDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             } header: {
-                Text("Bug Report")
+                Text(L10n.settingsBugReport)
             } footer: {
                 Text("Opens Mail with a pre-filled report to moose@lumpy.me including your description and the last 5 minutes of app logs.")
             }
