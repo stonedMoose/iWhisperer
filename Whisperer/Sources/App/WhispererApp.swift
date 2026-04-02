@@ -59,6 +59,25 @@ struct MacWhispererApp: App {
                 Divider()
             }
 
+            // Microphone quick-switch
+            let inputDevices = AudioDeviceManager.listInputDevices()
+            if !inputDevices.isEmpty {
+                Section("Microphone") {
+                    Button {
+                        settingsStore.selectedMicrophoneUID = ""
+                    } label: {
+                        Text("System Default \(settingsStore.selectedMicrophoneUID.isEmpty ? "✓" : "")")
+                    }
+                    ForEach(inputDevices) { device in
+                        Button {
+                            settingsStore.selectedMicrophoneUID = device.uid
+                        } label: {
+                            Text("\(device.name) \(settingsStore.selectedMicrophoneUID == device.uid ? "✓" : "")")
+                        }
+                    }
+                }
+            }
+
             // Language quick-switch
             Section(L10n.language) {
                 Button {

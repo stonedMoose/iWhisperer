@@ -22,6 +22,7 @@ struct SettingsView: View {
         case streaming   = "Streaming"
         case meeting     = "Meeting"
         case permissions = "Permissions"
+        case support     = "Support"
 
         var id: String { rawValue }
         var icon: String {
@@ -32,6 +33,7 @@ struct SettingsView: View {
             case .streaming:   "antenna.radiowaves.left.and.right"
             case .meeting:     "person.3"
             case .permissions: "lock.shield"
+            case .support:     "questionmark.circle"
             }
         }
     }
@@ -92,6 +94,7 @@ struct SettingsView: View {
         case .streaming:   StreamingSection()
         case .meeting:     MeetingSection()
         case .permissions: PermissionsSection()
+        case .support:     SupportSection()
         }
     }
 }
@@ -468,6 +471,81 @@ private struct PermissionCard: View {
             RoundedRectangle(cornerRadius: 8)
                 .fill(isGranted ? Color.green.opacity(0.08) : Color.secondary.opacity(0.06))
         )
+    }
+}
+
+// MARK: - Support
+
+private struct SupportSection: View {
+    @State private var bugDescription = ""
+
+    var body: some View {
+        Form {
+            Section {
+                LabeledContent("Description") {
+                    TextEditor(text: $bugDescription)
+                        .font(.body)
+                        .frame(minHeight: 90)
+                        .scrollContentBackground(.hidden)
+                        .padding(6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.secondary.opacity(0.08))
+                        )
+                }
+
+                HStack {
+                    Spacer()
+                    Button("Send Bug Report") {
+                        sendBugReport()
+                    }
+                    .disabled(bugDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            } header: {
+                Text("Bug Report")
+            } footer: {
+                Text("Opens Mail with a pre-filled report to moose@lumpy.me including your description and the last 5 minutes of app logs.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private func sendBugReport() {
+        let logs = collectRecentLogs()
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let os = ProcessInfo.processInfo.operatingSystemVersionString
+        let body = """
+        Bug Description:
+        \(bugDescription.trimmingCharacters(in: .whitespacesAndNewlines))
+
+        --- App Logs (last 5 min) ---
+        \(logs)
+
+        --- System Info ---
+        MacWhisperer \(version)
+        macOS \(os)
+        """
+        let subject = "MacWhisperer Bug Report"
+        guard let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "mailto:moose@lumpy.me?subject=\(encodedSubject)&body=\(encodedBody)") else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    private func collectRecentLogs() -> String {
+        guard let store = try? OSLogStore(scope: .currentProcessIdentifier) else {
+            return "(unable to access logs)"
+        }
+        let since = Date().addingTimeInterval(-300)
+        let position = store.position(date: since)
+        guard let entries = try? store.getEntries(at: position) else {
+            return "(unable to retrieve logs)"
+        }
+        let lines = entries
+            .compactMap { $0 as? OSLogEntryLog }
+            .suffix(150)
+            .map { "[\($0.category)] \($0.composedMessage)" }
+        return lines.isEmpty ? "(no recent logs)" : lines.joined(separator: "\n")
     }
 }
 
