@@ -34,7 +34,7 @@ final class MeetingRecorder {
         }
         audioCapture.setAccumulateBuffer(false)
 
-        try audioCapture.startRecording()
+        try audioCapture.startRecording(deviceUID: settingsStore.selectedMicrophoneUID)
         Log.meeting.info("Meeting recording started: \(url.lastPathComponent)")
     }
 

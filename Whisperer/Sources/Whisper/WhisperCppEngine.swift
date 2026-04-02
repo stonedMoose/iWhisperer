@@ -95,6 +95,10 @@ actor WhisperCppEngine {
         params.n_threads = Int32(maxThreads)
         params.no_timestamps = true
         params.no_speech_thold = 0.6
+        params.suppress_blank = true
+        // A streaming window holds at most ~80 words; cap decoding to avoid
+        // runaway token generation that adds latency with no transcript benefit.
+        params.max_tokens = 96
 
         let lang = language == "auto" ? nil : language
 

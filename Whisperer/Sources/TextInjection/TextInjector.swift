@@ -1,3 +1,4 @@
+import AppKit
 import ApplicationServices
 import CoreGraphics
 import Foundation
@@ -17,27 +18,36 @@ struct TextInjector {
         )
     }
 
-    static func typeText(_ text: String) {
+    /// Injects text by placing it on the clipboard and simulating Cmd+V.
+    /// This makes all text appear at once instead of character-by-character.
+    static func typeText(_ text: String) async {
         let maxLength = 5000
-        let truncated = String(text.prefix(maxLength))
-        let sanitized = truncated.filter { char in
+        let sanitized = String(text.prefix(maxLength)).filter { char in
             char == "\n" || char == "\t" || (char >= " " && char != "\u{7F}")
         }
+        guard !sanitized.isEmpty else { return }
+
+        let pasteboard = NSPasteboard.general
+        let savedContent = pasteboard.string(forType: .string)
+
+        pasteboard.clearContents()
+        pasteboard.setString(sanitized, forType: .string)
 
         let source = CGEventSource(stateID: .hidSystemState)
+        let vKey: CGKeyCode = 9 // 'v'
+        let down = CGEvent(keyboardEventSource: source, virtualKey: vKey, keyDown: true)
+        let up = CGEvent(keyboardEventSource: source, virtualKey: vKey, keyDown: false)
+        down?.flags = .maskCommand
+        up?.flags = .maskCommand
+        down?.post(tap: .cghidEventTap)
+        up?.post(tap: .cghidEventTap)
 
-        for character in sanitized {
-            let utf16 = Array(String(character).utf16)
-            let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true)
-            let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false)
+        // Wait for the target app to process the paste before restoring the clipboard.
+        try? await Task.sleep(for: .milliseconds(100))
 
-            keyDown?.keyboardSetUnicodeString(stringLength: utf16.count, unicodeString: utf16)
-            keyUp?.keyboardSetUnicodeString(stringLength: utf16.count, unicodeString: utf16)
-
-            keyDown?.post(tap: .cghidEventTap)
-            keyUp?.post(tap: .cghidEventTap)
-
-            usleep(1000)
+        pasteboard.clearContents()
+        if let saved = savedContent {
+            pasteboard.setString(saved, forType: .string)
         }
     }
 }

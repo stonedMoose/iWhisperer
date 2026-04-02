@@ -4,7 +4,7 @@ import OSLog
 import SwiftUI
 import KeyboardShortcuts
 import UniformTypeIdentifiers
-import UserNotifications
+@preconcurrency import UserNotifications
 
 
 @Observable
@@ -27,21 +27,50 @@ final class AppState {
     var showSetupWindow = false
 
     private let whisperEngine = WhisperCppEngine()
+    /// Separate engine for streaming so it can run a lighter model concurrently.
+    private let streamingEngine = WhisperCppEngine()
     private let modelManager = ModelManager.shared
     private let audioCapture = AudioCapture()
     private let recordingIndicator = RecordingIndicator()
     private let settingsStore: SettingsStore
     private var modelChangeObserver: NSObjectProtocol?
+    private var streamingModelChangeObserver: NSObjectProtocol?
     private var permissionPollTask: Task<Void, Never>?
     private var streamingLoopTask: Task<Void, Never>?
-    private var streamingTypedWordCount = 0
+    var isStreamingModelLoaded = false
+    private var streamingCommittedWords: [String] = []
     private var streamingPreviousWords: [String] = []
     private var streamingPromptTokens: [Int32] = []
     private var meetingRecorder: MeetingRecorder?
     private var meetingTimerTask: Task<Void, Never>?
 
-    private static let streamStepMs = 3000
-    private static let streamLengthMs = 10000
+    /// The model actually used for streaming: explicit streaming model if set, else the batch model.
+    var effectiveStreamingModel: WhisperModel {
+        settingsStore.streamingModel ?? settingsStore.selectedModel
+    }
+
+    // Streaming timing — model-adaptive so small models aren't penalised.
+    // First-step is shorter to get words on screen fast; subsequent steps
+    // are longer for stability (LocalAgreement needs two windows to agree).
+    private var streamFirstStepMs: Int {
+        switch effectiveStreamingModel {
+        case .tiny:   return 300
+        case .base:   return 400
+        case .small:  return 600
+        case .medium: return 900
+        case .largev3: return 1200
+        }
+    }
+    private var streamStepMs: Int {
+        switch effectiveStreamingModel {
+        case .tiny:   return 600
+        case .base:   return 800
+        case .small:  return 1200
+        case .medium: return 1600
+        case .largev3: return 2000
+        }
+    }
+    private var streamLengthMs: Int { streamStepMs * 4 }
     private static let streamKeepMs = 200
 
     init(settingsStore: SettingsStore) {
@@ -49,6 +78,7 @@ final class AppState {
         self.meetingRecorder = MeetingRecorder(audioCapture: audioCapture, settingsStore: settingsStore)
         setupHotkey()
         setupModelChangeListener()
+        setupStreamingModelChangeListener()
         setupNotificationDelegate()
         RecordingIndicator.installClickMonitor()
         Task {
@@ -88,8 +118,12 @@ final class AppState {
         // Poll for permissions until both are granted
         startPermissionPolling()
 
-        // Load model regardless (so it's ready when permissions are granted)
+        // Load batch model regardless (so it's ready when permissions are granted)
         await loadModel()
+        // Load streaming model if it differs from the batch model
+        if settingsStore.streamingModel != nil {
+            await loadStreamingModel()
+        }
     }
 
     private func startPermissionPolling() {
@@ -143,6 +177,7 @@ final class AppState {
     /// still initializing Metal resource sets, causing ggml_abort.
     func prepareForTermination() async {
         await whisperEngine.unloadModel()
+        await streamingEngine.unloadModel()
     }
 
     func relaunch() {
@@ -181,6 +216,22 @@ final class AppState {
         ) { [weak self] _ in
             Task { @MainActor in
                 await self?.loadModel()
+                // Re-load streaming model too if it follows the batch model
+                if self?.settingsStore.streamingModel == nil {
+                    await self?.loadStreamingModel()
+                }
+            }
+        }
+    }
+
+    private func setupStreamingModelChangeListener() {
+        streamingModelChangeObserver = NotificationCenter.default.addObserver(
+            forName: .streamingModelChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                await self?.loadStreamingModel()
             }
         }
     }
@@ -191,11 +242,15 @@ final class AppState {
             if let observer = modelChangeObserver {
                 NotificationCenter.default.removeObserver(observer)
             }
+            if let observer = streamingModelChangeObserver {
+                NotificationCenter.default.removeObserver(observer)
+            }
         }
     }
 
     func cycleLanguage() {
-        let options: [WhisperLanguage] = [.auto] + settingsStore.preferredLanguages
+        let preferred = settingsStore.preferredLanguages
+        let options: [WhisperLanguage] = preferred.count >= 2 ? preferred : [.auto] + preferred
         guard options.count > 1 else { return }
         let current = settingsStore.selectedLanguage
         let idx = options.firstIndex(of: current) ?? -1
@@ -249,6 +304,22 @@ final class AppState {
         }
     }
 
+    /// Load the streaming-specific model into `streamingEngine`.
+    /// Falls back to the batch model when no streaming model is explicitly set.
+    func loadStreamingModel() async {
+        isStreamingModelLoaded = false
+        let model = effectiveStreamingModel
+        do {
+            Log.whisper.info("Loading streaming model: \(model.rawValue)")
+            let path = try await modelManager.ensureModel(model) { _ in }
+            try await streamingEngine.loadModel(path: path)
+            isStreamingModelLoaded = true
+            Log.whisper.info("Streaming model loaded successfully")
+        } catch {
+            Log.whisper.error("Failed to load streaming model: \(error)")
+        }
+    }
+
     // MARK: - Recording
 
     private func startRecording() {
@@ -287,7 +358,7 @@ final class AppState {
 
     private func startBatchRecording() {
         do {
-            try audioCapture.startRecording()
+            try audioCapture.startRecording(deviceUID: settingsStore.selectedMicrophoneUID)
             guard recordingIndicator.show() else {
                 _ = audioCapture.stopRecording()
                 return
@@ -325,7 +396,7 @@ final class AppState {
             )
             Log.whisper.info("Transcription result: \(text, privacy: .private)")
             if !text.isEmpty {
-                TextInjector.typeText(text)
+                await TextInjector.typeText(text)
             }
         } catch {
             Log.whisper.error("Transcription failed: \(error)")
@@ -336,18 +407,27 @@ final class AppState {
     // MARK: - Streaming mode (sliding window + LocalAgreement)
 
     private func startStreamingRecording() {
-        streamingTypedWordCount = 0
+        // Ensure the streaming model is loaded. Load it now if this is the first
+        // time streaming is used or if a different model was just selected.
+        if !isStreamingModelLoaded {
+            Task {
+                await loadStreamingModel()
+            }
+            // Proceed — the loop will fire after the model loads (it checks on each step).
+        }
+
+        streamingCommittedWords = []
         streamingPreviousWords = []
         streamingPromptTokens = []
 
         do {
-            try audioCapture.startRecording()
+            try audioCapture.startRecording(deviceUID: settingsStore.selectedMicrophoneUID)
             guard recordingIndicator.show() else {
                 _ = audioCapture.stopRecording()
                 return
             }
             isRecording = true
-            Log.audio.info("Recording started (streaming mode)")
+            Log.audio.info("Recording started (streaming mode, model: \(self.effectiveStreamingModel.rawValue))")
 
             streamingLoopTask = Task {
                 await streamingLoop()
@@ -357,26 +437,52 @@ final class AppState {
         }
     }
 
+    /// Minimum RMS energy to consider a window as containing speech.
+    /// ~-42 dBFS — effective for typical indoor recording environments.
+    private static func hasVoiceActivity(_ samples: [Float]) -> Bool {
+        guard samples.count > 0 else { return false }
+        let sumSq = samples.reduce(0 as Float) { $0 + $1 * $1 }
+        return sqrt(sumSq / Float(samples.count)) > 0.008
+    }
+
     private func streamingLoop() async {
-        let minSamples = Self.streamStepMs * 16 // 16kHz = 16 samples per ms
+        var isFirstIteration = true
 
         while !Task.isCancelled {
-            try? await Task.sleep(for: .milliseconds(Self.streamStepMs))
+            let stepMs = isFirstIteration ? streamFirstStepMs : streamStepMs
+            let minSamples = stepMs * 16  // 16 samples per ms at 16 kHz
+
+            try? await Task.sleep(for: .milliseconds(stepMs))
             guard !Task.isCancelled else { break }
 
             let window = audioCapture.getWindow(
-                lengthMs: Self.streamLengthMs,
+                lengthMs: streamLengthMs,
                 keepMs: Self.streamKeepMs
             )
             guard window.count >= minSamples else { continue }
 
+            // Skip silent windows — resets LocalAgreement so the next
+            // voiced window is treated as a fresh first iteration.
+            guard Self.hasVoiceActivity(window) else {
+                if !isFirstIteration {
+                    streamingPreviousWords = []
+                    isFirstIteration = true
+                }
+                continue
+            }
+
+            isFirstIteration = false
+
             let language = settingsStore.selectedLanguage
             let langStr = language == .auto ? "auto" : language.rawValue
+
+            // Wait for the streaming model to finish loading if it was just triggered.
+            guard isStreamingModelLoaded else { continue }
 
             let text: String
             let tokens: [Int32]
             do {
-                (text, tokens) = try await whisperEngine.transcribeWindow(
+                (text, tokens) = try await streamingEngine.transcribeWindow(
                     samples: window,
                     language: langStr,
                     promptTokens: streamingPromptTokens
@@ -394,20 +500,39 @@ final class AppState {
                 continue
             }
 
-            // Word-level LocalAgreement: longest common word prefix
-            let stableCount = Self.longestCommonWordPrefix(currentWords, streamingPreviousWords)
+            // LocalAgreement: compute how many leading words are stable across windows.
+            // On the very first voiced window there is no previous transcription to compare
+            // against, so we speculatively commit the first half of decoded words immediately.
+            // The second window then confirms or overwrites — validated by Macháček et al.
+            // (arXiv:2307.14743) who show first-window accuracy >85% at ≤1 s chunk sizes.
+            let stableCount: Int
+            if streamingPreviousWords.isEmpty {
+                stableCount = max(1, currentWords.count / 2)
+            } else {
+                // When the sliding window advances it drops old words from the front.
+                // Find how many words were dropped from `streamingPreviousWords` so we
+                // compare overlapping regions rather than position 0 vs position 0.
+                let shift = Self.findWindowShift(from: streamingPreviousWords, to: currentWords)
+                let alignedPrevious = Array(streamingPreviousWords.dropFirst(shift))
+                stableCount = Self.longestCommonWordPrefix(currentWords, alignedPrevious)
+            }
             streamingPreviousWords = currentWords
 
-            // Type only newly confirmed words
-            if stableCount > streamingTypedWordCount {
-                let newWords = Array(currentWords[streamingTypedWordCount..<stableCount])
-                let prefix = streamingTypedWordCount == 0 ? "" : " "
+            guard stableCount > 0 else { continue }
+
+            // Find how many of currentWords were already committed (typed) in a prior iteration.
+            let alreadyTyped = Self.findAlignedTypedCount(
+                committed: streamingCommittedWords,
+                current: currentWords
+            )
+
+            if stableCount > alreadyTyped {
+                let newWords = Array(currentWords[alreadyTyped..<stableCount])
+                let prefix = streamingCommittedWords.isEmpty ? "" : " "
                 let newText = prefix + newWords.joined(separator: " ")
-                if !newText.isEmpty {
-                    Log.whisper.info("Streaming text: \(newText, privacy: .private)")
-                    TextInjector.typeText(newText)
-                    streamingTypedWordCount = stableCount
-                }
+                Log.whisper.info("Streaming text: \(newText, privacy: .private)")
+                await TextInjector.typeText(newText)
+                streamingCommittedWords.append(contentsOf: newWords)
             }
 
             // Feed tokens as prompt context for next iteration
@@ -433,31 +558,44 @@ final class AppState {
         recordingIndicator.showProcessing()
 
         defer {
-            streamingTypedWordCount = 0
+            streamingCommittedWords = []
             streamingPreviousWords = []
             streamingPromptTokens = []
             isProcessing = false
             recordingIndicator.hide()
         }
 
-        // Final full inference on all captured audio
+        // Final pass: transcribe only the last streamLengthMs of audio so it's fast.
+        // This catches trailing words the streaming loop hadn't confirmed yet.
         let language = settingsStore.selectedLanguage
         let langStr = language == .auto ? "auto" : language.rawValue
+        let finalWindow = samples.count > streamLengthMs * 16
+            ? Array(samples.suffix(streamLengthMs * 16))
+            : samples
         do {
-            let finalText = try await whisperEngine.transcribe(samples: samples, language: langStr)
+            let (finalText, _) = try await streamingEngine.transcribeWindow(
+                samples: finalWindow,
+                language: langStr,
+                promptTokens: streamingPromptTokens
+            )
             let finalWords = Self.splitIntoWords(finalText)
 
-            if finalWords.count > streamingTypedWordCount {
-                let remaining = Array(finalWords[streamingTypedWordCount...])
-                let prefix = streamingTypedWordCount == 0 ? "" : " "
+            let alreadyTyped = Self.findAlignedTypedCount(
+                committed: streamingCommittedWords,
+                current: finalWords
+            )
+
+            if finalWords.count > alreadyTyped {
+                let remaining = Array(finalWords[alreadyTyped...])
+                let prefix = streamingCommittedWords.isEmpty ? "" : " "
                 let remainingText = prefix + remaining.joined(separator: " ")
                 if !remainingText.isEmpty {
                     Log.whisper.info("Streaming final: \(remainingText, privacy: .private)")
-                    TextInjector.typeText(remainingText)
+                    await TextInjector.typeText(remainingText)
                 }
-            } else if streamingTypedWordCount == 0 && !finalText.isEmpty {
+            } else if streamingCommittedWords.isEmpty && !finalText.isEmpty {
                 Log.whisper.info("Streaming fallback: \(finalText, privacy: .private)")
-                TextInjector.typeText(finalText)
+                await TextInjector.typeText(finalText)
             }
         } catch {
             Log.whisper.error("Streaming final transcription failed: \(error)")
@@ -479,6 +617,43 @@ final class AppState {
             if wa == wb { count += 1 } else { break }
         }
         return count
+    }
+
+    /// When the sliding window advances it drops words from the front of the previous
+    /// transcription. This finds how many words were dropped so we can compare the
+    /// overlapping region rather than misaligned position 0s.
+    ///
+    /// Returns the number of words to skip from the start of `previous` to align it
+    /// with `current`. Returns `previous.count` when no overlap is found.
+    private static func findWindowShift(from previous: [String], to current: [String]) -> Int {
+        guard !previous.isEmpty, !current.isEmpty else { return 0 }
+        let verifyLen = min(3, min(previous.count, current.count))
+        for shift in 0..<previous.count {
+            let tail = previous.dropFirst(shift)
+            let matchLen = min(verifyLen, min(tail.count, current.count))
+            guard matchLen > 0 else { break }
+            if tail.prefix(matchLen).elementsEqual(current.prefix(matchLen)) {
+                return shift
+            }
+        }
+        return previous.count
+    }
+
+    /// Find how many words at the START of `current` were already committed in a prior
+    /// iteration (handles the case where the window slid so committed words no longer
+    /// start at index 0 of the new transcription).
+    ///
+    /// Returns the number of `current` words that should be skipped because they
+    /// were already typed.
+    private static func findAlignedTypedCount(committed: [String], current: [String]) -> Int {
+        guard !committed.isEmpty, !current.isEmpty else { return 0 }
+        let maxCheck = min(committed.count, current.count)
+        for k in stride(from: maxCheck, through: 1, by: -1) {
+            if committed.suffix(k).elementsEqual(current.prefix(k)) {
+                return k
+            }
+        }
+        return 0
     }
 
     // MARK: - Meeting Recording
@@ -593,8 +768,7 @@ final class AppState {
     }
 
     private func sendTranscriptNotification(fileURL: URL) {
-        let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
             guard granted else { return }
 
             let content = UNMutableNotificationContent()
@@ -604,7 +778,7 @@ final class AppState {
             content.userInfo = ["fileURL": fileURL.absoluteString]
 
             let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-            center.add(request)
+            UNUserNotificationCenter.current().add(request)
         }
     }
 

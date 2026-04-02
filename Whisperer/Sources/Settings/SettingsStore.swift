@@ -22,6 +22,10 @@ final class SettingsStore {
     @ObservationIgnored
     @AppStorage("streamingMode") private var _streamingMode: Bool = false
 
+    /// Raw storage: empty string = "follow batch model". Use `streamingModel` for access.
+    @ObservationIgnored
+    @AppStorage("streamingModel") private var _streamingModel: String = ""
+
     @ObservationIgnored
     @AppStorage("transcriptDirectory") private var _transcriptDirectory: String = ""
 
@@ -42,6 +46,9 @@ final class SettingsStore {
 
     @ObservationIgnored
     @AppStorage("hasCompletedSetup") private var _hasCompletedSetup: Bool = false
+
+    @ObservationIgnored
+    @AppStorage("selectedMicrophoneUID") private var _selectedMicrophoneUID: String = ""
 
 
     var selectedModel: WhisperModel {
@@ -117,6 +124,20 @@ final class SettingsStore {
         set {
             withMutation(keyPath: \.streamingMode) {
                 _streamingMode = newValue
+            }
+        }
+    }
+
+    /// The model used for streaming transcription.
+    /// `nil` means "follow the batch model" (`selectedModel`).
+    var streamingModel: WhisperModel? {
+        get {
+            access(keyPath: \.streamingModel)
+            return _streamingModel.isEmpty ? nil : WhisperModel(rawValue: _streamingModel)
+        }
+        set {
+            withMutation(keyPath: \.streamingModel) {
+                _streamingModel = newValue?.rawValue ?? ""
             }
         }
     }
@@ -210,6 +231,18 @@ final class SettingsStore {
         set {
             withMutation(keyPath: \.hasCompletedSetup) {
                 _hasCompletedSetup = newValue
+            }
+        }
+    }
+
+    var selectedMicrophoneUID: String {
+        get {
+            access(keyPath: \.selectedMicrophoneUID)
+            return _selectedMicrophoneUID
+        }
+        set {
+            withMutation(keyPath: \.selectedMicrophoneUID) {
+                _selectedMicrophoneUID = newValue
             }
         }
     }

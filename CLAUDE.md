@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Workflow Rule — Always Deploy After Changes
+
+After completing **any user-requested modification** to the macOS app, always run:
+
+```bash
+pnpm run deploy:mac
+```
+
+This single command rebuilds in release mode, copies the binary to `/Applications/MacWhisperer.app`, re-signs it, and relaunches the app. Do this automatically — do not wait for the user to ask.
+
 ## Project Overview
 
 Dual-platform local speech-to-text app powered by whisper.cpp (OpenAI Whisper) with Metal GPU acceleration:

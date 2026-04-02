@@ -46,7 +46,22 @@ final class AudioCapture: @unchecked Sendable {
     }
 
     /// Start capturing audio from the microphone at 16kHz mono (what whisper.cpp expects).
-    func startRecording() throws {
+    func startRecording(deviceUID: String = "") throws {
+        if !deviceUID.isEmpty, let deviceID = AudioDeviceManager.deviceID(forUID: deviceUID) {
+            var id = deviceID
+            let status = AudioUnitSetProperty(
+                engine.inputNode.audioUnit!,
+                kAudioOutputUnitProperty_CurrentDevice,
+                kAudioUnitScope_Global,
+                0,
+                &id,
+                UInt32(MemoryLayout<AudioDeviceID>.size)
+            )
+            if status != noErr {
+                Log.audio.error("Failed to set input device \(deviceUID): \(status)")
+            }
+        }
+
         let inputNode = engine.inputNode
         let nativeFormat = inputNode.outputFormat(forBus: 0)
 
@@ -123,21 +138,26 @@ final class AudioCapture: @unchecked Sendable {
         }
     }
 
-    /// Return the last `lengthMs` of audio, retaining `keepMs` overlap context.
-    /// Used by streaming mode to get a sliding window of audio.
+    /// Return the last `lengthMs` of audio for the streaming sliding window.
+    /// The buffer is capped at `lengthMs` to prevent unbounded growth while
+    /// preserving the full window worth of context for the next iteration.
+    /// (The `keepMs` parameter is retained for API compatibility but unused.)
     func getWindow(lengthMs: Int, keepMs: Int) -> [Float] {
         bufferQueue.sync {
             let lengthSamples = lengthMs * 16
-            let keepSamples = keepMs * 16
 
             let maxSamples = min(audioBuffer.count, lengthSamples)
             if maxSamples <= 0 { return [] }
 
             let window = Array(audioBuffer.suffix(maxSamples))
 
-            // Trim buffer to retain only keepMs overlap for next window
-            let retainCount = min(audioBuffer.count, keepSamples)
-            audioBuffer = Array(audioBuffer.suffix(retainCount))
+            // Cap buffer at lengthSamples to prevent unbounded growth.
+            // Keeps the full window worth of context so consecutive calls
+            // share ~(lengthMs - stepMs) seconds of overlap — required for
+            // LocalAgreement to find stable words across iterations.
+            if audioBuffer.count > lengthSamples {
+                audioBuffer = Array(audioBuffer.suffix(lengthSamples))
+            }
 
             return window
         }
